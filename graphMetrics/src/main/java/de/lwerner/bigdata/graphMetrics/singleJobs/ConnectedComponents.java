@@ -13,7 +13,11 @@ import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.util.Collector;
 
-import de.lwerner.bigdata.graphMetrics.examples.ConnectedComponentsData;
+import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
+import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
+import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
+import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
+import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
 /**
  * Calculates the weakly connected components of a (either undirected or directed) graph.
@@ -27,6 +31,8 @@ import de.lwerner.bigdata.graphMetrics.examples.ConnectedComponentsData;
  */
 public class ConnectedComponents {
 
+	private static CommandLineArguments arguments;
+	
 	/**
 	 * The main job
 	 * 
@@ -34,17 +40,18 @@ public class ConnectedComponents {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), args);
+		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
 		// Get the graph data
-		// TODO: Do not use the default data!
-		DataSet<Long> defaultVertices = ConnectedComponentsData.getDefaultVertexDataSet(env);
-		DataSet<Tuple2<Long, Long>> defaultEdges = ConnectedComponentsData.getDefaultEdgeDataSet(env);
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 
-		DataSet<Edge<Long, Long>> undirectedEdges = defaultEdges.flatMap(new UndirectEdge());
-		DataSet<Vertex<Long, Long>> vertices = defaultVertices.map(new VertexCreator());
+		DataSet<Edge<Long, FoodBrokerEdge>> undirectedEdges = edges.flatMap(new UndirectEdge());
+		DataSet<Vertex<Long, Long>> verticesWithComponentIDs = vertices.map(new VertexCreator());
 
-		Graph<Long, Long, Long> graph = Graph.fromDataSet(vertices, undirectedEdges, env);
+		Graph<Long, Long, FoodBrokerEdge> graph = Graph.fromDataSet(verticesWithComponentIDs, undirectedEdges, env);
 
 		int maxIterations = 10;
 
@@ -52,7 +59,7 @@ public class ConnectedComponents {
 		 * Each vertex sends its component-id (initially the vertex-id) to all neighboring vertices,
 		 * takes the minimum of the incoming component-ids and sets it as its own component-ids.
 		 */
-		Graph<Long, Long, Long> result = graph.runVertexCentricIteration(new ComponentIDUpdater(),
+		Graph<Long, Long, FoodBrokerEdge> result = graph.runVertexCentricIteration(new ComponentIDUpdater(),
 				new ComponentIDMessenger(), maxIterations);
 		
 		// The vertices (with the component-id as their value) are the result
@@ -89,13 +96,13 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class VertexCreator implements MapFunction<Long, Vertex<Long, Long>> {
+	public static final class VertexCreator implements MapFunction<Vertex<Long, FoodBrokerVertex>, Vertex<Long, Long>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public Vertex<Long, Long> map(Long vertexID) throws Exception {
-			return new Vertex<>(vertexID, vertexID);
+		public Vertex<Long, Long> map(Vertex<Long, FoodBrokerVertex> vertex) throws Exception {
+			return new Vertex<>(vertex.getId(), vertex.getId());
 		}
 
 	}
@@ -107,14 +114,14 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class UndirectEdge implements FlatMapFunction<Tuple2<Long, Long>, Edge<Long, Long>> {
+	public static final class UndirectEdge implements FlatMapFunction<Edge<Long, FoodBrokerEdge>, Edge<Long, FoodBrokerEdge>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void flatMap(Tuple2<Long, Long> vertexIDs, Collector<Edge<Long, Long>> out) throws Exception {
-			out.collect(new Edge<>(vertexIDs.f0, vertexIDs.f1, 1L));
-			out.collect(new Edge<>(vertexIDs.f1, vertexIDs.f0, 1L));
+		public void flatMap(Edge<Long, FoodBrokerEdge> edge, Collector<Edge<Long, FoodBrokerEdge>> out) throws Exception {
+			out.collect(edge);
+			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
 		}
 
 	}
@@ -126,13 +133,13 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class ComponentIDMessenger extends MessagingFunction<Long, Long, Long, Long> {
+	public static final class ComponentIDMessenger extends MessagingFunction<Long, Long, Long, FoodBrokerEdge> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
 		public void sendMessages(Vertex<Long, Long> vertex) throws Exception {
-			for (Edge<Long, Long> edge: getEdges()) {
+			for (Edge<Long, FoodBrokerEdge> edge: getEdges()) {
 				sendMessageTo(edge.getTarget(), vertex.getValue());
 			}
 		}
