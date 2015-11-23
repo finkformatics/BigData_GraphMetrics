@@ -3,16 +3,20 @@ package de.lwerner.bigdata.graphMetrics.utils;
 public class CommandLineArguments {
 
 	private int maxIterations;
-	private String inputPath;
+	private String nodesPath;
+	private String edgesPath;
 	private String outputPath;
 
 	public CommandLineArguments() {
-		// Empty constructor
+		maxIterations = 10;
+		nodesPath = getClass().getResource("/nodes.json").getPath();
+		edgesPath = getClass().getResource("/edges.json").getPath();
 	}
 
-	public CommandLineArguments(int maxIterations, String inputPath, String outputPath) {
+	public CommandLineArguments(int maxIterations, String nodesPath, String edgesPath, String outputPath) {
 		this.maxIterations = maxIterations;
-		this.inputPath = inputPath;
+		this.nodesPath = nodesPath;
+		this.edgesPath = edgesPath;
 		this.outputPath = outputPath;
 	}
 
@@ -24,12 +28,20 @@ public class CommandLineArguments {
 		this.maxIterations = maxIterations;
 	}
 
-	public String getInputPath() {
-		return inputPath;
+	public String getNodesPath() {
+		return nodesPath;
 	}
 
-	public void setInputPath(String inputPath) {
-		this.inputPath = inputPath;
+	public void setNodesPath(String nodesPath) {
+		this.nodesPath = nodesPath;
+	}
+	
+	public String getEdgesPath() {
+		return edgesPath;
+	}
+	
+	public void setEdgesPath(String edgesPath) {
+		this.edgesPath = edgesPath;
 	}
 
 	public String getOutputPath() {
@@ -42,7 +54,7 @@ public class CommandLineArguments {
 
 	@Override
 	public String toString() {
-		return "CommandLineArguments [maxIterations=" + maxIterations + ", inputPath=" + inputPath + ", outputPath="
+		return "CommandLineArguments [maxIterations=" + maxIterations + ", nodesPath=" + nodesPath + ", edgesPath=" + edgesPath + ", outputPath="
 				+ outputPath + "]";
 	}
 

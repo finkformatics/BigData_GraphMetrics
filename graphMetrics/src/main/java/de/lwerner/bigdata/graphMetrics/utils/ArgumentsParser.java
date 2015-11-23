@@ -1,5 +1,6 @@
 package de.lwerner.bigdata.graphMetrics.utils;
 
+import java.io.File;
 import java.util.Comparator;
 import java.util.HashMap;
 
@@ -16,10 +17,9 @@ public class ArgumentsParser {
 	public static CommandLineArguments parseArguments(String className, String... arguments) throws ParseException, IllegalArgumentException {
 		Options options = new Options();
 		options.addOption("m", "maxIterations", true, "max iterations on converging algorithms");
-		options.addOption("i", "input", true, "absolute path to input file");
-		options.getOption("input").setRequired(true);
+		options.addOption("n", "nodes", true, "absolute path to nodes json file");
+		options.addOption("e", "edges", true, "absolute path to edges json file");
 		options.addOption("o", "output", true, "absolute path to output file");
-		options.getOption("output").setRequired(true);
 		
 		CommandLineArguments args = new CommandLineArguments();
 		CommandLineParser parser = new DefaultParser();
@@ -32,11 +32,15 @@ public class ArgumentsParser {
 					throw new IllegalArgumentException();
 				}
 			}
-			if (!cli.hasOption("input") || !cli.hasOption("output")) {
-				throw new IllegalArgumentException();
+			if (cli.hasOption("nodes")) {
+				args.setNodesPath(cli.getOptionValue("nodes"));
 			}
-			args.setInputPath(cli.getOptionValue("input"));
-			args.setOutputPath(cli.getOptionValue("output"));
+			if (cli.hasOption("edges")) {
+				args.setEdgesPath(cli.getOptionValue("edges"));
+			}
+			if (cli.hasOption("output")) {
+				args.setOutputPath(cli.getOptionValue("output"));
+			}
 		} catch(IllegalArgumentException e) {
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.setOptionComparator(new GraphMetricsOptionComparator());
@@ -55,9 +59,10 @@ public class ArgumentsParser {
 		
 		public GraphMetricsOptionComparator() {
 			orderMap = new HashMap<>();
-			orderMap.put("i", 1);
-			orderMap.put("o", 2);
-			orderMap.put("m", 3);
+			orderMap.put("n", 1);
+			orderMap.put("e", 2);
+			orderMap.put("o", 3);
+			orderMap.put("m", 4);
 		}
 		
 		@Override
