@@ -8,15 +8,21 @@ import org.apache.flink.graph.Vertex;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
+import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
+import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
 public class VertexEdgeCount {
 
+	private static CommandLineArguments arguments;
+	
 	public static void main(String[] args) throws Exception {
+		arguments = ArgumentsParser.parseArguments(VertexEdgeCount.class.getName(), args);
+		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env);
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env);
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
 		

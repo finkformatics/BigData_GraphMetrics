@@ -12,6 +12,8 @@ import org.apache.flink.util.Collector;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
+import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
+import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
 /**
@@ -21,12 +23,16 @@ import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
  * @author Toni Pohl
  */
 public class SpreadAttributes {
+	
+	private static CommandLineArguments arguments;
 
 	public static void main(String[] args) throws Exception {
+		arguments = ArgumentsParser.parseArguments(SpreadAttributes.class.getName(), args);
+		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env);
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env);
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		// Attributes of vertices
 		DataSet<Tuple2<String, Integer>> attributesVertices
@@ -49,6 +55,7 @@ public class SpreadAttributes {
 		// Attributes of edges
 		DataSet<Tuple2<String, Integer>> attributesEdges
 			= edges.flatMap(new FlatMapFunction<Edge<Long,FoodBrokerEdge>, Tuple2<String, Integer>>() {
+				
 				private static final long serialVersionUID = 1L;
 	
 				public void flatMap(Edge<Long, FoodBrokerEdge> in, Collector<Tuple2<String, Integer>> out) throws Exception {
@@ -66,6 +73,8 @@ public class SpreadAttributes {
 		
 		// Number of keys vertices
 		vertices.flatMap(new FlatMapFunction<Vertex<Long,FoodBrokerVertex>, Tuple2<String, Integer>>() {
+
+			private static final long serialVersionUID = 1L;
 
 			public void flatMap(Vertex<Long, FoodBrokerVertex> in, Collector<Tuple2<String, Integer>> out)
 					throws Exception {
@@ -86,6 +95,8 @@ public class SpreadAttributes {
 		
 		// Number of keys edges		
 		edges.flatMap(new FlatMapFunction<Edge<Long,FoodBrokerEdge>, Tuple2<String, Integer>>() {
+
+			private static final long serialVersionUID = 1L;
 
 			public void flatMap(Edge<Long, FoodBrokerEdge> in, Collector<Tuple2<String, Integer>> out)
 					throws Exception {

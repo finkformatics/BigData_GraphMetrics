@@ -23,10 +23,8 @@ public class FoodBrokerReader {
 	 * @param env
 	 * @return
 	 */
-	public static DataSet<Vertex<Long, FoodBrokerVertex>> getVertices(ExecutionEnvironment env) {
-		String edgesPath = FoodBrokerReader.class.getClassLoader().getResource("nodes.json").getPath();
-		
-		return env.readTextFile(edgesPath).map(new MapFunction<String, Vertex<Long, FoodBrokerVertex>>() {
+	public static DataSet<Vertex<Long, FoodBrokerVertex>> getVertices(ExecutionEnvironment env, String nodesPath) {		
+		return env.readTextFile(nodesPath).map(new MapFunction<String, Vertex<Long, FoodBrokerVertex>>() {
 			private static final long serialVersionUID = 1L;
 
 			public Vertex<Long, FoodBrokerVertex> map(String arg0) throws Exception {
@@ -42,9 +40,7 @@ public class FoodBrokerReader {
 	 * @param env
 	 * @return
 	 */
-	public static DataSet<Edge<Long, FoodBrokerEdge>> getEdges(ExecutionEnvironment env) {
-		String edgesPath = FoodBrokerReader.class.getClassLoader().getResource("edges.json").getPath();
-		
+	public static DataSet<Edge<Long, FoodBrokerEdge>> getEdges(ExecutionEnvironment env, String edgesPath) {		
 		return env.readTextFile(edgesPath).map(new MapFunction<String, Edge<Long, FoodBrokerEdge>>() {
 			private static final long serialVersionUID = 1L;
 
