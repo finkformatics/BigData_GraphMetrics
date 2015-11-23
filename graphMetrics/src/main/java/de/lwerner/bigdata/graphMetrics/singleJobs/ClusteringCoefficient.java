@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.clusteringCoefficient;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 public class ClusteringCoefficient {
 

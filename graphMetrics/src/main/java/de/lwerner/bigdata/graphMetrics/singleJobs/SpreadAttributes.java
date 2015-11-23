@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.spreadAttributes;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 import java.util.Iterator;
 

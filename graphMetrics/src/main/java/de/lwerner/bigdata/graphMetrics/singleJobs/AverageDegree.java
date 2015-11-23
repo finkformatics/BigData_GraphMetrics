@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.averageDegree;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 public class AverageDegree {
 

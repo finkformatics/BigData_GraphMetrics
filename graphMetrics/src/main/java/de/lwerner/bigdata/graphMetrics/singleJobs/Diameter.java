@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.diameter;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 public class Diameter {
 

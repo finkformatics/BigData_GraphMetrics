@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.vertexEdgeCount;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;

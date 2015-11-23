@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs.connectedComponents;
+package de.lwerner.bigdata.graphMetrics.singleJobs;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
