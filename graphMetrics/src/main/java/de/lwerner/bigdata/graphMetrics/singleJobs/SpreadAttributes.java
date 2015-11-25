@@ -79,14 +79,15 @@ public class SpreadAttributes {
 			public void flatMap(Vertex<Long, FoodBrokerVertex> in, Collector<Tuple2<String, Integer>> out)
 					throws Exception {
 				Iterator<String> atts = in.getValue().getData().getFieldNames();
-				String str = "";
-				
+				StringBuilder sb = new StringBuilder();
 				while (atts.hasNext()) {
-					str += atts.next() + " ";
+					sb.append(atts.next()).append(" ");
+				}
+				if (sb.length() > 0) {
+					sb.deleteCharAt(sb.length() - 1);
 				}
 				
-				out.collect(new Tuple2<String, Integer>(str, 1));
-			
+				out.collect(new Tuple2<String, Integer>(sb.toString(), 1));
 			}
 		})
 		.groupBy(0)
@@ -101,14 +102,15 @@ public class SpreadAttributes {
 			public void flatMap(Edge<Long, FoodBrokerEdge> in, Collector<Tuple2<String, Integer>> out)
 					throws Exception {
 				Iterator<String> atts = in.getValue().getData().getFieldNames();
-				String str = "";
-				
+				StringBuilder sb = new StringBuilder();
 				while (atts.hasNext()) {
-					str += atts.next() + " ";
+					sb.append(atts.next()).append(" ");
+				}
+				if (sb.length() > 0) {
+					sb.deleteCharAt(sb.length() - 1);
 				}
 				
-				out.collect(new Tuple2<String, Integer>(str, 1));
-			
+				out.collect(new Tuple2<String, Integer>(sb.toString(), 1));
 			}
 		})
 		.groupBy(0)

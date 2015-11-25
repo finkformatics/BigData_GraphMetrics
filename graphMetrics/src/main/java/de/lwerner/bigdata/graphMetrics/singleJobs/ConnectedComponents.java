@@ -4,6 +4,7 @@ import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.aggregation.Aggregations;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
@@ -65,13 +66,16 @@ public class ConnectedComponents {
 		// The vertices (with the component-id as their value) are the result
 		DataSet<Vertex<Long, Long>> resultVertices = result.getVertices();
 		
+		resultVertices.print();
 		DataSet<Tuple2<Long, Long>> componentSizes = resultVertices.flatMap(new ComponentIDCounter())
 				.groupBy(0).sum(1);
 		
 		// TODO: Is correct, but the first property of the tuple is arbitrary??
-		// DataSet<Tuple2<Long, Long>> biggestComponent = componentSizes.aggregate(Aggregations.MAX, 1);
+		DataSet<Tuple2<Long, Long>> biggestComponent = componentSizes.aggregate(Aggregations.MAX, 1);
 		
 		componentSizes.print();
+		
+		biggestComponent.print();
 	}
 	
 	/**

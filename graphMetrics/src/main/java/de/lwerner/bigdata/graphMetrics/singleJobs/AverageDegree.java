@@ -30,7 +30,7 @@ public class AverageDegree {
 		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
 		
 		DataSet<Tuple2<Long, Long>> outDegrees = graph.outDegrees();
-		DataSet<Tuple2<Long, Long>> inDegrees = graph.outDegrees();
+		DataSet<Tuple2<Long, Long>> inDegrees = graph.inDegrees();
 		DataSet<Double> outDegreeAverage = outDegrees.reduceGroup(new AverageCalculator());
 		DataSet<Double> inDegreeAverage = inDegrees.reduceGroup(new AverageCalculator());
 		
