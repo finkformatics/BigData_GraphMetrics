@@ -1,0 +1,93 @@
+{
+  "spreadLabels" : [ {
+    "label" : "\"Employee\"",
+    "count" : 40
+  }, {
+    "label" : "\"Vendor\"",
+    "count" : 15
+  }, {
+    "label" : "\"createdBy\"",
+    "count" : 2316
+  }, {
+    "label" : "\"createdFor\"",
+    "count" : 25098
+  }, {
+    "label" : "\"operatedBy\"",
+    "count" : 14683
+  }, {
+    "label" : "\"DeliveryNote\"",
+    "count" : 14683
+  }, {
+    "label" : "\"SalesOrder\"",
+    "count" : 5932
+  }, {
+    "label" : "\"SalesQuotationLine\"",
+    "count" : 109906
+  }, {
+    "label" : "\"placedAt\"",
+    "count" : 14683
+  }, {
+    "label" : "\"Customer\"",
+    "count" : 70
+  }, {
+    "label" : "\"SalesInvoice\"",
+    "count" : 8228
+  }, {
+    "label" : "\"serves\"",
+    "count" : 14683
+  }, {
+    "label" : "\"Logistics\"",
+    "count" : 10
+  }, {
+    "label" : "\"User\"",
+    "count" : 40
+  }, {
+    "label" : "\"sentBy\"",
+    "count" : 10000
+  }, {
+    "label" : "\"sentTo\"",
+    "count" : 10000
+  }, {
+    "label" : "\"PurchOrderLine\"",
+    "count" : 65717
+  }, {
+    "label" : "\"allocatedTo\"",
+    "count" : 2316
+  }, {
+    "label" : "\"contains\"",
+    "count" : 14683
+  }, {
+    "label" : "\"SalesQuotation\"",
+    "count" : 10000
+  }, {
+    "label" : "\"processedBy\"",
+    "count" : 20615
+  }, {
+    "label" : "\"receivedFrom\"",
+    "count" : 5932
+  }, {
+    "label" : "\"Client\"",
+    "count" : 70
+  }, {
+    "label" : "\"PurchInvoice\"",
+    "count" : 16870
+  }, {
+    "label" : "\"basedOn\"",
+    "count" : 5932
+  }, {
+    "label" : "\"Product\"",
+    "count" : 1012
+  }, {
+    "label" : "\"PurchOrder\"",
+    "count" : 14683
+  }, {
+    "label" : "\"SalesOrderLine\"",
+    "count" : 65717
+  }, {
+    "label" : "\"Ticket\"",
+    "count" : 2316
+  }, {
+    "label" : "\"openedBy\"",
+    "count" : 2316
+  } ]
+}

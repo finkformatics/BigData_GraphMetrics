@@ -1,0 +1,122 @@
+{
+  "attributesCount" : [ {
+    "attribute" : "deliveryDate",
+    "count" : 5932
+  }, {
+    "attribute" : "gender",
+    "count" : 40
+  }, {
+    "attribute" : "text",
+    "count" : 25098
+  }, {
+    "attribute" : "quantity",
+    "count" : 241340
+  }, {
+    "attribute" : "erpSoNum",
+    "count" : 2316
+  }, {
+    "attribute" : "createdAt",
+    "count" : 2316
+  }, {
+    "attribute" : "category",
+    "count" : 1012
+  }, {
+    "attribute" : "contactPhone",
+    "count" : 70
+  }, {
+    "attribute" : "kind",
+    "count" : 73969
+  }, {
+    "attribute" : "problem",
+    "count" : 2316
+  }, {
+    "attribute" : "trackingCode",
+    "count" : 14683
+  }, {
+    "attribute" : "email",
+    "count" : 40
+  }, {
+    "attribute" : "erpCustNum",
+    "count" : 70
+  }, {
+    "attribute" : "erpEmplNum",
+    "count" : 40
+  }, {
+    "attribute" : "expense",
+    "count" : 16870
+  }, {
+    "attribute" : "id",
+    "count" : 2316
+  }, {
+    "attribute" : "name",
+    "count" : 1257
+  }, {
+    "attribute" : "account",
+    "count" : 70
+  }, {
+    "attribute" : "date",
+    "count" : 70396
+  }, {
+    "attribute" : "price",
+    "count" : 1012
+  }, {
+    "attribute" : "purchPrice",
+    "count" : 175623
+  }, {
+    "attribute" : "num",
+    "count" : 71543
+  }, {
+    "attribute" : "revenue",
+    "count" : 8228
+  }, {
+    "attribute" : "salesPrice",
+    "count" : 175623
+  } ],
+  "vertexAttributeSchemasCount" : [ {
+    "schema" : "date kind num",
+    "count" : 24683
+  }, {
+    "schema" : "date kind num deliveryDate",
+    "count" : 5932
+  }, {
+    "schema" : "date revenue kind num text",
+    "count" : 8228
+  }, {
+    "schema" : "kind name erpCustNum contactPhone account",
+    "count" : 70
+  }, {
+    "schema" : "date kind num text expense",
+    "count" : 16870
+  }, {
+    "schema" : "kind num name",
+    "count" : 95
+  }, {
+    "schema" : "createdAt problem erpSoNum kind id",
+    "count" : 2316
+  }, {
+    "schema" : "kind price num name category",
+    "count" : 1012
+  }, {
+    "schema" : "date kind num trackingCode",
+    "count" : 14683
+  }, {
+    "schema" : "gender kind num name",
+    "count" : 40
+  }, {
+    "schema" : "kind name erpEmplNum email",
+    "count" : 40
+  } ],
+  "edgeAttributeSchemasCount" : [ {
+    "schema" : "quantity salesPrice purchPrice",
+    "count" : 109906
+  }, {
+    "schema" : "quantity purchPrice",
+    "count" : 65717
+  }, {
+    "schema" : "quantity salesPrice",
+    "count" : 65717
+  }, {
+    "schema" : "",
+    "count" : 143257
+  } ]
+}
