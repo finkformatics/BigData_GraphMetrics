@@ -5,12 +5,15 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -46,8 +49,12 @@ public class VertexEdgeCount {
 		long verticesCount = graph.numberOfVertices();
 		long edgesCount = graph.numberOfEdges();
 		
-		System.out.println("Number vertices: " + verticesCount);
-		System.out.println("Number edges: " + edgesCount);
+		ObjectMapper m = new ObjectMapper();
+		ObjectNode countNode = m.createObjectNode();
+		countNode.put("vertexCount", verticesCount);
+		countNode.put("edgeCount", edgesCount);
+		
+		GraphMetricsWriter.writeJson(m, countNode, arguments.getOutputPath());
 	}
 	
 }

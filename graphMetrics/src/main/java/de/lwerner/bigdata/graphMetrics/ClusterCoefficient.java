@@ -17,12 +17,15 @@ import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.library.TriangleEnumerator.Triad;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -32,6 +35,7 @@ import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
  * Solves the problem by counting the triads and the triple of the graph.
  * 
  * @author Toni Pohl
+ * @author Lukas Werner
  */
 public class ClusterCoefficient {
 	
@@ -81,7 +85,13 @@ public class ClusterCoefficient {
 		
 		DataSet<Tuple2<Long, Long>> triple = g.outDegrees().map(new TriplePerVertixMapFunction()).sum(1);
 		long tripleCount = triple.collect().get(0).f1;
-		System.out.println("Global Cluster Coefficient: " + (triadsCount * 3 / (double) tripleCount));
+		double globalClusterCoefficient = triadsCount * 3 / (double) tripleCount;
+		
+		ObjectMapper m = new ObjectMapper();
+		ObjectNode clusterCoefficientObject = m.createObjectNode();
+		clusterCoefficientObject.put("globalClusterCoefficient", globalClusterCoefficient);
+		
+		GraphMetricsWriter.writeJson(m, clusterCoefficientObject, arguments.getOutputPath());
 	}
 	
 	/**

@@ -7,19 +7,26 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
+import java.util.List;
 
 /**
  * Job to count the label key of vertices and edges.
  * 
  * @author Toni Pohl
+ * @author Lukas Werner
  */
 public class SpreadLabels {
 	
@@ -70,7 +77,19 @@ public class SpreadLabels {
 		.groupBy(0)
 		.sum(1);
 		
-		verticesLabelCount.union(edgesLabelCount).groupBy(0).sum(1).print();
+		DataSet<Tuple2<String, Integer>> spreadLabels = verticesLabelCount.union(edgesLabelCount).groupBy(0).sum(1);
+		List<Tuple2<String, Integer>> spreadLabelsList = spreadLabels.collect();
+		
+		ObjectMapper m = new ObjectMapper();
+		ObjectNode spreadLabelsObject = m.createObjectNode();
+		ArrayNode spreadLabelsArray = spreadLabelsObject.putArray("spreadLabels");
+		for (Tuple2<String, Integer> labelCount: spreadLabelsList) {
+			ObjectNode labelCountObject = spreadLabelsArray.addObject();
+			labelCountObject.put("label", labelCount.f0);
+			labelCountObject.put("count", labelCount.f1);
+		}
+		
+		GraphMetricsWriter.writeJson(m, spreadLabelsObject, arguments.getOutputPath());
 	}
 	
 }

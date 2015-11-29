@@ -8,18 +8,23 @@ import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
 /**
+ * Calculates the average degree of all vertices
  * 
  * @author Lukas Werner
+ * @author Toni Pohl
  */
 public class AverageDegree {
 
@@ -44,13 +49,18 @@ public class AverageDegree {
 		
 		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
 		
+		// Just need to calculate either out degree or in degree because
+		// every outgoing edge goes to any other vertex as an ingoing edge
 		DataSet<Tuple2<Long, Long>> outDegrees = graph.outDegrees();
-		DataSet<Tuple2<Long, Long>> inDegrees = graph.inDegrees();
-		DataSet<Double> outDegreeAverage = outDegrees.reduceGroup(new AverageCalculator());
-		DataSet<Double> inDegreeAverage = inDegrees.reduceGroup(new AverageCalculator());
+		DataSet<Double> averageDegreeDataSet = outDegrees.reduceGroup(new AverageCalculator());
 		
-		outDegreeAverage.print();
-		inDegreeAverage.print();
+		double averageDegree = averageDegreeDataSet.collect().get(0);
+		
+		ObjectMapper m = new ObjectMapper();
+		ObjectNode averageDegreeObject = m.createObjectNode();
+		averageDegreeObject.put("averageDegree", averageDegree);
+		
+		GraphMetricsWriter.writeJson(m, averageDegreeObject, arguments.getOutputPath());
 	}
 
 	/**
@@ -66,12 +76,10 @@ public class AverageDegree {
 		public void reduce(Iterable<Tuple2<Long, Long>> values, Collector<Double> out) throws Exception {
 			long sum = 0;
 			long count = 0;
-			
 			for (Tuple2<Long, Long> value: values) {
 				sum += value.f1;
 				count++;
 			}
-			
 			out.collect((double)sum / count);
 		}
 		

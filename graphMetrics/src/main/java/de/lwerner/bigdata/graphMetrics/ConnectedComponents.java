@@ -13,14 +13,20 @@ import org.apache.flink.graph.spargel.MessageIterator;
 import org.apache.flink.graph.spargel.MessagingFunction;
 import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
+import java.util.List;
 
 /**
  * Calculates the weakly connected components of a (either undirected or directed) graph.
@@ -31,6 +37,7 @@ import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
  * This will be repeated until there is no change anymore (until it converges).
  * 
  * @author Lukas Werner
+ * @author Toni Pohl
  */
 public class ConnectedComponents {
 
@@ -74,13 +81,21 @@ public class ConnectedComponents {
 		resultVertices.print();
 		DataSet<Tuple2<Long, Long>> componentSizes = resultVertices.flatMap(new ComponentIDCounter())
 				.groupBy(0).sum(1);
+		List<Tuple2<Long, Long>> componentSizesList = componentSizes.collect();
 		
 		// TODO: Is correct, but the first property of the tuple is arbitrary??
 		DataSet<Tuple2<Long, Long>> biggestComponent = componentSizes.aggregate(Aggregations.MAX, 1);
+		long biggestSize = biggestComponent.collect().get(0).f1;
 		
-		componentSizes.print();
+		ObjectMapper m = new ObjectMapper();
+		ObjectNode connectedComponentsObject = m.createObjectNode();
+		connectedComponentsObject.put("biggestSize", biggestSize);
+		ArrayNode connectedComponents = connectedComponentsObject.putArray("connectedComponentSizes");
+		for (Tuple2<Long, Long> component: componentSizesList) {
+			connectedComponents.add(component.f1);
+		}
 		
-		biggestComponent.print();
+		GraphMetricsWriter.writeJson(m, connectedComponentsObject, arguments.getOutputPath());
 	}
 	
 	/**

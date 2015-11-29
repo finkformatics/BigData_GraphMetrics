@@ -2,3 +2,9 @@
 .classpath
 .project
 .settings/
+average-degree.json
+cluster-coefficient.json
+connected-components.json
+spread-attributes.json
+spread-labels.json
+vertex-edge-count.json
