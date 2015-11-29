@@ -23,8 +23,8 @@ public class FoodBrokerReader {
 	 * @param env
 	 * @return
 	 */
-	public static DataSet<Vertex<Long, FoodBrokerVertex>> getVertices(ExecutionEnvironment env, String nodesPath) {		
-		return env.readTextFile(nodesPath).map(new MapFunction<String, Vertex<Long, FoodBrokerVertex>>() {
+	public static DataSet<Vertex<Long, FoodBrokerVertex>> getVertices(ExecutionEnvironment env, String verticesPath) {		
+		return env.readTextFile(verticesPath).map(new MapFunction<String, Vertex<Long, FoodBrokerVertex>>() {
 			private static final long serialVersionUID = 1L;
 
 			public Vertex<Long, FoodBrokerVertex> map(String arg0) throws Exception {

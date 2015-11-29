@@ -1,34 +1,21 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.commons.math3.stat.descriptive.moment.SemiVariance.Direction;
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.graph.Edge;
-import org.apache.flink.graph.EdgeDirection;
-import org.apache.flink.graph.EdgesFunction;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.NeighborsFunction;
-import org.apache.flink.graph.NeighborsFunctionWithVertexValue;
-import org.apache.flink.graph.ReduceEdgesFunction;
 import org.apache.flink.graph.Vertex;
-import org.apache.flink.graph.library.TriangleEnumerator;
 import org.apache.flink.graph.library.TriangleEnumerator.Triad;
-import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.util.Collector;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
@@ -37,6 +24,8 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
 /**
  * Calculates the global clustering coefficient of a graph.
  * 
@@ -44,8 +33,11 @@ import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
  * 
  * @author Toni Pohl
  */
-public class ClusteringCoefficient {
+public class ClusterCoefficient {
 	
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 
 	/**
@@ -55,11 +47,11 @@ public class ClusteringCoefficient {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), FILENAME_CLUSTER_COEFFICIENT, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		DataSet<Edge<Long, FoodBrokerEdge>> undirectedEdges = edges.flatMap(new UndirectedEdge());
@@ -77,6 +69,7 @@ public class ClusteringCoefficient {
 			.where(Triad.V2, Triad.V3)
 			.equalTo(0, 1)
 			.with(new JoinFunction<Triad<Long>, Edge<Long, FoodBrokerEdge>, Triad<Long>>() {
+				private static final long serialVersionUID = 1L;
 
 				@Override
 				public Triad<Long> join(Triad<Long> first, Edge<Long, FoodBrokerEdge> second) throws Exception {
@@ -88,7 +81,7 @@ public class ClusteringCoefficient {
 		
 		DataSet<Tuple2<Long, Long>> triple = g.outDegrees().map(new TriplePerVertixMapFunction()).sum(1);
 		long tripleCount = triple.collect().get(0).f1;
-		System.out.println("Connected Components global: " + (triadsCount * 3 / (double) tripleCount));
+		System.out.println("Global Cluster Coefficient: " + (triadsCount * 3 / (double) tripleCount));
 	}
 	
 	/**

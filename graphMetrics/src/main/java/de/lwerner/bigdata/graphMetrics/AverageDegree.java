@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.DataSet;
@@ -15,16 +15,31 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
+/**
+ * 
+ * @author Lukas Werner
+ */
 public class AverageDegree {
 
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 	
+	/**
+	 * The main job
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
@@ -38,6 +53,11 @@ public class AverageDegree {
 		inDegreeAverage.print();
 	}
 
+	/**
+	 * Group reduce function to calculate the average of all values
+	 * 
+	 * @author Lukas Werner
+	 */
 	private static final class AverageCalculator implements GroupReduceFunction<Tuple2<Long, Long>, Double> {
 
 		private static final long serialVersionUID = 1L;

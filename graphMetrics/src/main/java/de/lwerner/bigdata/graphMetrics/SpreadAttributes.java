@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import java.util.Iterator;
 
@@ -16,6 +16,8 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
 /**
  * Job to count attributes of vertices and edges
  * Count different patterns of attributes
@@ -24,14 +26,23 @@ import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
  */
 public class SpreadAttributes {
 	
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 
+	/**
+	 * The main job
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(SpreadAttributes.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(SpreadAttributes.class.getName(), FILENAME_SPREAD_ATTRIBUTES, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		// Attributes of vertices

@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -20,6 +20,8 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
 /**
  * Calculates the weakly connected components of a (either undirected or directed) graph.
  * 
@@ -32,6 +34,9 @@ import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
  */
 public class ConnectedComponents {
 
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 	
 	/**
@@ -41,12 +46,12 @@ public class ConnectedComponents {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), FILENAME_CONNECTED_COMPONENTS, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
 		// Get the graph data
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 
 		DataSet<Edge<Long, FoodBrokerEdge>> undirectedEdges = edges.flatMap(new UndirectEdge());

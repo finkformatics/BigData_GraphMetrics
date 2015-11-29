@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -12,16 +12,33 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
+/**
+ * Apache Flink job for computing vertex and edge count of a given graph
+ * 
+ * @author Toni Pohl
+ * @author Lukas Werner
+ */
 public class VertexEdgeCount {
 
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 	
+	/**
+	 * The main job
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(VertexEdgeCount.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(VertexEdgeCount.class.getName(), FILENAME_VERTEX_EDGE_COUNT, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
 		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);

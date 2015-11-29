@@ -1,4 +1,4 @@
-package de.lwerner.bigdata.graphMetrics.singleJobs;
+package de.lwerner.bigdata.graphMetrics;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.DataSet;
@@ -14,6 +14,8 @@ import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
 
+import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
 /**
  * Job to count the label key of vertices and edges.
  * 
@@ -21,14 +23,23 @@ import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
  */
 public class SpreadLabels {
 	
+	/**
+	 * Command line arguments
+	 */
 	private static CommandLineArguments arguments;
 
+	/**
+	 * The main job
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(SpreadLabels.class.getName(), args);
+		arguments = ArgumentsParser.parseArguments(SpreadLabels.class.getName(), FILENAME_SPREAD_LABELS, args);
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getNodesPath());
+		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 				
 		DataSet<Tuple2<String, Integer>> verticesLabelCount 
