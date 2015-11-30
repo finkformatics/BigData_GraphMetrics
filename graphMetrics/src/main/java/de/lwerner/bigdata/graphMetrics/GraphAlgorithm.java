@@ -64,8 +64,21 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	}
 	
 	/**
-	 * Run method to run the algorithm
-	 * Must be implemented by subclasses
+	 * Run the algorithm and write output
+	 * @throws Exception during run or writeOutput
 	 */
-	abstract public void run();
+	public void runAndWrite() throws Exception {
+		run();
+		writeOutput();
+	}
+	
+	/**
+	 * Run method to run the algorithm
+	 */
+	abstract public void run() throws Exception;
+	
+	/**
+	 * Method to writeOutput
+	 */
+	abstract public void writeOutput() throws Exception;
 }

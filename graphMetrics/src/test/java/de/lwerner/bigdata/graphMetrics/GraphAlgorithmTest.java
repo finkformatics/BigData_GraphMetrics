@@ -40,6 +40,11 @@ public class GraphAlgorithmTest {
 			public void run() {
 				// do nothing
 			}
+
+			@Override
+			public void writeOutput() {
+				// TODO Auto-generated method stub
+			}
 		};
 	}
 	
