@@ -89,7 +89,7 @@ public abstract class ArgumentsParser {
 		 */
 		public GraphMetricsOptionComparator() {
 			orderMap = new HashMap<>();
-			orderMap.put("n", 1);
+			orderMap.put("v", 1);
 			orderMap.put("e", 2);
 			orderMap.put("o", 3);
 			orderMap.put("m", 4);
