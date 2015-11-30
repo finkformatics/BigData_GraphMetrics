@@ -17,7 +17,7 @@ import org.junit.Test;
  * @author Toni Pohl
  */
 public class GraphAlgorithmTest {
-	private GraphAlgorithm algo;
+	private GraphAlgorithm<Integer, Integer, Integer> algo;
 	private ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 	private DataSet<Vertex<Integer, Integer>> vertices;
 	private DataSet<Edge<Integer, Integer>> edges;
