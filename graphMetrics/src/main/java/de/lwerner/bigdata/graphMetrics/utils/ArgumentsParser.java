@@ -34,7 +34,7 @@ public abstract class ArgumentsParser {
 	public static CommandLineArguments parseArguments(String className, String outputFilename, String[] arguments) throws ParseException, IllegalArgumentException {
 		Options options = new Options();
 		options.addOption("m", "maxIterations", true, "max iterations on converging algorithms");
-		options.addOption("n", "nodes", true, "absolute path to nodes json file");
+		options.addOption("v", "vertices", true, "absolute path to vertices json file");
 		options.addOption("e", "edges", true, "absolute path to edges json file");
 		options.addOption("o", "output", true, "absolute path to output file");
 		
@@ -49,8 +49,8 @@ public abstract class ArgumentsParser {
 					throw new IllegalArgumentException();
 				}
 			}
-			if (cli.hasOption("nodes")) {
-				args.setVerticesPath(cli.getOptionValue("nodes"));
+			if (cli.hasOption("vertices")) {
+				args.setVerticesPath(cli.getOptionValue("vertices"));
 			}
 			if (cli.hasOption("edges")) {
 				args.setEdgesPath(cli.getOptionValue("edges"));
@@ -100,6 +100,10 @@ public abstract class ArgumentsParser {
 			return Integer.compare(orderMap.get(o1.getOpt()), orderMap.get(o2.getOpt()));
 		}
 		
+	}
+	
+	public static void main(String[] args) throws IllegalArgumentException, ParseException {
+		ArgumentsParser.parseArguments(ArgumentsParser.class.getName(), "", args);
 	}
 	
 }
