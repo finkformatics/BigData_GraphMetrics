@@ -64,6 +64,15 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	}
 	
 	/**
+	 * Get the context of the algorithm
+	 * 
+	 * @return the ExecutionEnvironment context
+	 */
+	public ExecutionEnvironment getContext() {
+		return context;
+	}
+	
+	/**
 	 * Run the algorithm and write output
 	 * @throws Exception during run or writeOutput
 	 */

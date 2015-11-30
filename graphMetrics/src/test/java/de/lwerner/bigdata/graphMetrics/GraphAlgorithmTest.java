@@ -52,5 +52,6 @@ public class GraphAlgorithmTest {
 	public void  evaluateGetter() {
 		Assert.assertEquals(vertices, algo.getVertices());
 		Assert.assertEquals(edges, algo.getEdges());
+		Assert.assertEquals(env, algo.getContext());
 	}
 }
