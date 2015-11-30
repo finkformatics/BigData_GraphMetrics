@@ -7,6 +7,8 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Vertex;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,8 +44,9 @@ public class GraphAlgorithmTest {
 			}
 
 			@Override
-			public void writeOutput() {
-				// TODO Auto-generated method stub
+			public JsonNode writeOutput(ObjectMapper m) {
+				// do nothing
+				return null;
 			}
 		};
 	}

@@ -5,11 +5,17 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+
+import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
+import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 /**
  * Abstract class which should be implemented by all graph algorithms
  * 
  * @author Toni Pohl
+ * @author Lukas Werner
  *
  * @param <K> the key type for edge and vertex identifiers
  * @param <VV> the value type for vertices
@@ -17,10 +23,27 @@ import org.apache.flink.graph.Vertex;
  */
 public abstract class GraphAlgorithm<K, VV, EV> {
 	
-	private DataSet<Vertex<K, VV>> vertices;
-	private DataSet<Edge<K, EV>> edges;
-	private Graph<K, VV, EV> graph;
-	private ExecutionEnvironment context;
+	/**
+	 * Command Line Arguments
+	 */
+	protected static CommandLineArguments arguments;
+	
+	/**
+	 * Vertices
+	 */
+	protected DataSet<Vertex<K, VV>> vertices;
+	/**
+	 * Edges
+	 */
+	protected DataSet<Edge<K, EV>> edges;
+	/**
+	 * Graph
+	 */
+	protected Graph<K, VV, EV> graph;
+	/**
+	 * Context
+	 */
+	protected ExecutionEnvironment context;
 
 	/**
 	 * Creates a graph from vertices and edges
@@ -78,7 +101,9 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	 */
 	public void runAndWrite() throws Exception {
 		run();
-		writeOutput();
+		ObjectMapper m = new ObjectMapper();
+		JsonNode jsonNode = writeOutput(m);
+		GraphMetricsWriter.writeJson(m, jsonNode, arguments.getOutputPath());
 	}
 	
 	/**
@@ -89,5 +114,6 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	/**
 	 * Method to writeOutput
 	 */
-	abstract public void writeOutput() throws Exception;
+	abstract public JsonNode writeOutput(ObjectMapper m) throws Exception;
+	
 }

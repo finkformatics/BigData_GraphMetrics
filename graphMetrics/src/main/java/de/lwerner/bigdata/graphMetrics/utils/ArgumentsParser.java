@@ -102,8 +102,4 @@ public abstract class ArgumentsParser {
 		
 	}
 	
-	public static void main(String[] args) throws IllegalArgumentException, ParseException {
-		ArgumentsParser.parseArguments(ArgumentsParser.class.getName(), "", args);
-	}
-	
 }

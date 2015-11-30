@@ -9,6 +9,7 @@ import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -16,9 +17,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -46,11 +45,6 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	public double getAverageDegree() {
 		return averageDegree;
 	}
-
-	/**
-	 * Command line arguments
-	 */
-	private static CommandLineArguments arguments;
 	
 	/**
 	 * The main job
@@ -61,8 +55,8 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	public static void main(String[] args) {
 		try {
 			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
-		} catch (IllegalArgumentException | ParseException e1) {
-			e1.printStackTrace();
+		} catch (IllegalArgumentException | ParseException e) {
+			e.printStackTrace();
 			return;
 		}
 		
@@ -110,11 +104,9 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	}
 
 	@Override
-	public void writeOutput() throws JsonGenerationException, JsonMappingException, IOException {
-		ObjectMapper m = new ObjectMapper();
+	public JsonNode writeOutput(ObjectMapper m) throws JsonGenerationException, JsonMappingException, IOException {
 		ObjectNode averageDegreeObject = m.createObjectNode();
 		averageDegreeObject.put("averageDegree", averageDegree);
-		
-		GraphMetricsWriter.writeJson(m, averageDegreeObject, arguments.getOutputPath());	
+		return averageDegreeObject;
 	}	
 }
