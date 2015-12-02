@@ -45,26 +45,21 @@ public class VertexEdgeCountTest {
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		algo = new VertexEdgeCount<>(env.fromCollection(vs), env.fromCollection(es), env);
-	}
-	
-	@Test
-	public void evaluateVertexCount() throws Exception {
 		try {
 			algo.run();
 		} catch (Exception e) {
 			Assert.fail("Exception during run: " + e.getMessage());
 		}
+	}
+	
+	@Test
+	public void evaluateVertexCount() throws Exception {
 		long vertexCount = algo.getVerticesCount();
 		Assert.assertEquals(5, vertexCount);
 	}
 	
 	@Test
 	public void evaluateEdgeCount() {
-		try {
-			algo.run();
-		} catch (Exception e) {
-			Assert.fail("Exception during run: " + e.getMessage());
-		}
 		long edgeCount = algo.getEdgesCount();
 		Assert.assertEquals(12, edgeCount);
 	}
