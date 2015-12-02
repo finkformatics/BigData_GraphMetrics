@@ -31,8 +31,21 @@ import java.util.List;
  * @author Lukas Werner
  */
 public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerEdge> extends GraphAlgorithm<K, VV, EV> {
-
+	DataSet<Tuple2<String, Integer>> verticesLabelCount;
 	DataSet<Tuple2<String, Integer>> spreadLabels;
+	DataSet<Tuple2<String, Integer>> edgesLabelCount;
+	
+	public DataSet<Tuple2<String, Integer>> getVerticesLabelCount() {
+		return verticesLabelCount;
+	}
+
+	public DataSet<Tuple2<String, Integer>> getSpreadLabels() {
+		return spreadLabels;
+	}
+
+	public DataSet<Tuple2<String, Integer>> getEdgesLabelCount() {
+		return edgesLabelCount;
+	}
 	
 	public SpreadLabels(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
 		super(vertices, edges, context);
@@ -63,7 +76,7 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 
 	@Override
 	public void run() throws Exception {
-		DataSet<Tuple2<String, Integer>> verticesLabelCount = vertices
+		verticesLabelCount = vertices
 				.flatMap(new FlatMapFunction<Vertex<K, VV>, Tuple2<String, Integer>>() {
 
 					private static final long serialVersionUID = 1L;
@@ -75,7 +88,7 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 					}
 				}).groupBy(0).sum(1);
 
-		DataSet<Tuple2<String, Integer>> edgesLabelCount = edges
+		edgesLabelCount = edges
 				.flatMap(new FlatMapFunction<Edge<K, EV>, Tuple2<String, Integer>>() {
 
 					private static final long serialVersionUID = 1L;
