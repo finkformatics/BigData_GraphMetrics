@@ -31,6 +31,14 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 		super(vertices, edges, context);
 	}
 	
+	public long getVerticesCount() {
+		return verticesCount;
+	}
+
+	public long getEdgesCount() {
+		return edgesCount;
+	}
+
 	/**
 	 * The main job
 	 * 
