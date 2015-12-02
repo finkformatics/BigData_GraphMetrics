@@ -1,19 +1,19 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import org.apache.commons.cli.ParseException;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -23,12 +23,13 @@ import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
  * @author Toni Pohl
  * @author Lukas Werner
  */
-public class VertexEdgeCount {
+public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K, VV, EV> {
+	private long verticesCount = 0;
+	private long edgesCount = 0;
 
-	/**
-	 * Command line arguments
-	 */
-	private static CommandLineArguments arguments;
+	public VertexEdgeCount(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
+		super(vertices, edges, context);
+	}
 	
 	/**
 	 * The main job
@@ -37,24 +38,36 @@ public class VertexEdgeCount {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(VertexEdgeCount.class.getName(), FILENAME_VERTEX_EDGE_COUNT, args);
+		try {
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+		} catch (IllegalArgumentException | ParseException e) {
+			e.printStackTrace();
+			return;
+		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
 		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
-		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
+		new VertexEdgeCount<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
 		
-		long verticesCount = graph.numberOfVertices();
-		long edgesCount = graph.numberOfEdges();
+	}
+
+	@Override
+	public void run() throws Exception {
+		Graph<K, VV, EV> graph = getGraph();
 		
-		ObjectMapper m = new ObjectMapper();
+		verticesCount = graph.numberOfVertices();
+		edgesCount = graph.numberOfEdges();		
+	}
+
+	@Override
+	public JsonNode writeOutput(ObjectMapper m) throws Exception {
 		ObjectNode countNode = m.createObjectNode();
 		countNode.put("vertexCount", verticesCount);
 		countNode.put("edgeCount", edgesCount);
-		
-		GraphMetricsWriter.writeJson(m, countNode, arguments.getOutputPath());
+		return countNode;
 	}
 	
 }
