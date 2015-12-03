@@ -1,10 +1,12 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
+import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -60,6 +62,24 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	}
 	
 	/**
+	 * Creates a graph from vertices and edges
+	 * 
+	 * @param vertices a Dataset of vertices
+	 * @param edges a Dataset of edges
+	 * @param context the flink execution environment
+	 * @param undirected make the edges undirected
+	 */
+	public GraphAlgorithm(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context, boolean undirected) {
+		if (undirected) {
+			edges = edges.flatMap(new UndirectedEdge());
+		} 
+		this.vertices = vertices;
+		this.edges = edges;
+		this.graph = Graph.fromDataSet(vertices, edges, context);
+		this.context = context;
+	}
+	
+	/**
 	 * Get the vertices
 	 * 
 	 * @return the DataSet with the vertices
@@ -93,6 +113,24 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	 */
 	public ExecutionEnvironment getContext() {
 		return context;
+	}
+	
+	/**
+	 * FlatMapFunction which created undirected edges from edges
+	 * 
+	 * @author Toni Pohl
+	 */
+	private final class UndirectedEdge
+			implements FlatMapFunction<Edge<K, EV>, Edge<K, EV>> {
+
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		public void flatMap(Edge<K, EV> edge, Collector<Edge<K, EV>> out)
+				throws Exception {
+			out.collect(edge);
+			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
+		}
 	}
 	
 	/**

@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.cli.ParseException;
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -25,9 +24,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -47,6 +44,11 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 			ExecutionEnvironment context) {
 		super(vertices, edges, context);
 	}
+	
+	public ClusterCoefficient(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges,
+			ExecutionEnvironment context, boolean undirected) {
+		super(vertices, edges, context, undirected);
+	}
 
 	/**
 	 * The main job
@@ -63,32 +65,17 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 		}
 
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-
+		
 		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env,
 				arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> undirectedEdges = 
-				FoodBrokerReader.getEdges(env, arguments.getEdgesPath())
-				.flatMap(new UndirectedEdge());
+		DataSet<Edge<Long, FoodBrokerEdge>> edges = 
+				FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 
-		new ClusterCoefficient<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, undirectedEdges, env).runAndWrite();	
+		new ClusterCoefficient<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env, true).runAndWrite();	
 	}
 
-	/**
-	 * FlatMapFunction which created undirected edges from edges
-	 * 
-	 * @author Toni Pohl
-	 */
-	private static class UndirectedEdge
-			implements FlatMapFunction<Edge<Long, FoodBrokerEdge>, Edge<Long, FoodBrokerEdge>> {
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void flatMap(Edge<Long, FoodBrokerEdge> edge, Collector<Edge<Long, FoodBrokerEdge>> out)
-				throws Exception {
-			out.collect(edge);
-			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
-		}
+	public double getGlobalClusterCoefficient() {
+		return globalClusterCoefficient;
 	}
 
 	/**
@@ -163,8 +150,9 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 
 			// build and emit triads
 			while (edges.hasNext()) {
-				K higherVertexId = edges.next().getTarget();
-
+				Edge<K, EV> nextEdge = edges.next();
+				K higherVertexId = nextEdge.getTarget();
+				
 				// combine vertex with all previously read vertices
 				for (K lowerVertexId : vertices) {
 					outTriad.setSecondVertex(lowerVertexId);
@@ -180,7 +168,8 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	public void run() throws Exception {
 		Graph<K, VV, EV> g = getGraph();
 
-		DataSet<Edge<K, EV>> edgesById = edges.map(new EdgesIdMapFunction());
+		DataSet<Edge<K, EV>> edgesById = edges
+				.map(new EdgesIdMapFunction());
 
 		DataSet<Triad<K>> triads = edgesById.groupBy(0).sortGroup(1, Order.ASCENDING).reduceGroup(new TriadBuilder())
 				.join(edgesById).where(Triad.V2, Triad.V3).equalTo(0, 1)
@@ -191,7 +180,8 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 					public Triad<K> join(Triad<K> first, Edge<K, EV> second) throws Exception {
 						return first;
 					}
-				});
+				})
+				.distinct();
 
 		long triadsCount = triads.count();
 
