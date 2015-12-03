@@ -79,7 +79,8 @@ public class ClusterCoefficient {
 				public Triad<Long> join(Triad<Long> first, Edge<Long, FoodBrokerEdge> second) throws Exception {
 					return first;
 				}
-			});
+			})
+			.distinct();
 		
 		long triadsCount = triads.count();
 		
