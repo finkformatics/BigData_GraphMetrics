@@ -8,3 +8,6 @@ connected-components.json
 spread-attributes.json
 spread-labels.json
 vertex-edge-count.json
+/out/
+.idea/
+*.iml
