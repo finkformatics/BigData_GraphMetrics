@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+  <title>Graphmetrics report</title>
+</head>
+<body>
+<!--begin.rcode echo=FALSE
+  library(knitr)
+  library("rjson")
+  library("ggplot2")
+  opts_chunk$set(fig.width=5, fig.height=5)
+  end.rcode-->
+
+  <!--begin.rcode echo=FALSE
+    #Grab all values
+    averageDegree <- fromJSON(file="exampleInput/average-degree.json")$averageDegree
+    globalClusterCoefficient <- fromJSON(file="exampleInput/cluster-coefficient.json")$globalClusterCoefficient
+    connectedComponents <- fromJSON(file="exampleInput/connected-components.json")
+    vertexEdgeCount <- fromJSON(file="exampleInput/vertex-edge-count.json")
+
+    #Jsons for plots
+    spreadLabels <- fromJSON(file="exampleInput/spread-labels.json")$spreadLabels
+    attributesCount <- fromJSON(file="exampleInput/spread-attributes.json")$attributesCount
+
+    end.rcode-->
+
+  <!-- Print all single values -->
+  <h1>Values</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Average degree</th>
+        <th>Gloabel clustering coefficient</th>
+        <th>Biggest connected component</th>
+        <th>Vertex count</th>
+        <th>Edge count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><!--rinline averageDegree --></td>
+        <td><!--rinline globalClusterCoefficient --></td>
+        <td><!--rinline connectedComponents$biggestSize --></td>
+        <td><!--rinline vertexEdgeCount$vertexCount --></td>
+        <td><!--rinline vertexEdgeCount$edgeCount --></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Connected components -->
+  <h1>Connected components sizes</h1>
+  <!--begin.rcode echo=FALSE
+    kable(connectedComponents$connectedComponentSizes)
+    end.rcode-->
+
+  <!-- Spread labels as plot and table -->
+  <h1>Spread labels</h1>
+  <!--begin.rcode echo=FALSE
+    labels <- sapply(spreadLabels, function(x) x$label)
+    counts <- sapply(spreadLabels, function(x) x$count)
+
+    dat <- data.frame(labels = labels, counts = counts)
+    ggplot(data=dat, aes(x=labels,y=counts))+geom_bar(stat='identity')+coord_flip()
+    end.rcode-->
+
+  <!--begin.rcode echo=FALSE
+    kable(dat)
+    end.rcode-->
+
+  <!-- Spread attributes as plot and table -->
+  <h1>Spread attributes</h1>
+  <!--begin.rcode echo=FALSE
+    attributes <- sapply(attributesCount, function(x) x$attribute)
+    counts <- sapply(attributesCount, function(x) x$count)
+
+    dat <- data.frame(labels = attributes, counts = counts)
+    ggplot(data=dat, aes(x=labels,y=counts))+geom_bar(stat='identity')+coord_flip()
+    end.rcode-->
+
+  <!--begin.rcode echo=FALSE
+    kable(dat)
+    end.rcode-->
+</body>
+</html>
