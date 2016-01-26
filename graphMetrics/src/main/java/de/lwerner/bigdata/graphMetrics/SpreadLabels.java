@@ -59,7 +59,7 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 	 */
 	public static void main(String[] args) throws Exception {
 		try {
-			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_SPREAD_LABELS, args);
 		} catch (IllegalArgumentException | ParseException e) {
 			e.printStackTrace();
 			return;

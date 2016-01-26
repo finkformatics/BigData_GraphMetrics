@@ -57,7 +57,7 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	 */
 	public static void main(String[] args) throws Exception {
 		try {
-			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_CONNECTED_COMPONENTS, args);
 		} catch (IllegalArgumentException | ParseException e) {
 			e.printStackTrace();
 			return;

@@ -47,7 +47,7 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 	 */
 	public static void main(String[] args) throws Exception {
 		try {
-			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_VERTEX_EDGE_COUNT, args);
 		} catch (IllegalArgumentException | ParseException e) {
 			e.printStackTrace();
 			return;

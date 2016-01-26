@@ -58,7 +58,7 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	 */
 	public static void main(String[] args) throws Exception {
 		try {
-			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_CLUSTER_COEFFICIENT, args);
 		} catch (IllegalArgumentException | ParseException e) {
 			e.printStackTrace();
 			return;
