@@ -1,24 +1,27 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import org.apache.commons.cli.ParseException;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
-import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
+
+import java.io.IOException;
 
 /**
  * Calculates the average degree of all vertices
@@ -26,12 +29,22 @@ import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
  * @author Lukas Werner
  * @author Toni Pohl
  */
-public class AverageDegree {
+public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, VV, EV> {
+	
+	private double averageDegree = 0;
 
+	public AverageDegree(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
+		super(vertices, edges, context);
+	}
+	
 	/**
-	 * Command line arguments
+	 * Get result of AverageDegree
+	 * 
+	 * @return the average degree
 	 */
-	private static CommandLineArguments arguments;
+	public double getAverageDegree() {
+		return averageDegree;
+	}
 	
 	/**
 	 * The main job
@@ -39,28 +52,24 @@ public class AverageDegree {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+	public static void main(String[] args) {
+		try {
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
+		} catch (IllegalArgumentException | ParseException e) {
+			e.printStackTrace();
+			return;
+		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
 		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 		
-		Graph<Long, FoodBrokerVertex, FoodBrokerEdge> graph = Graph.fromDataSet(vertices, edges, env);
-		
-		// Just need to calculate either out degree or in degree because
-		// every outgoing edge goes to any other vertex as an ingoing edge
-		DataSet<Tuple2<Long, Long>> outDegrees = graph.outDegrees();
-		DataSet<Double> averageDegreeDataSet = outDegrees.reduceGroup(new AverageCalculator());
-		
-		double averageDegree = averageDegreeDataSet.collect().get(0);
-		
-		ObjectMapper m = new ObjectMapper();
-		ObjectNode averageDegreeObject = m.createObjectNode();
-		averageDegreeObject.put("averageDegree", averageDegree);
-		
-		GraphMetricsWriter.writeJson(m, averageDegreeObject, arguments.getOutputPath());
+		try {
+			new AverageDegree<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -68,15 +77,15 @@ public class AverageDegree {
 	 * 
 	 * @author Lukas Werner
 	 */
-	private static final class AverageCalculator implements GroupReduceFunction<Tuple2<Long, Long>, Double> {
+	public final class AverageCalculator implements GroupReduceFunction<Tuple2<K, Long>, Double> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void reduce(Iterable<Tuple2<Long, Long>> values, Collector<Double> out) throws Exception {
+		public void reduce(Iterable<Tuple2<K, Long>> values, Collector<Double> out) throws Exception {
 			long sum = 0;
 			long count = 0;
-			for (Tuple2<Long, Long> value: values) {
+			for (Tuple2<K, Long> value: values) {
 				sum += value.f1;
 				count++;
 			}
@@ -84,5 +93,20 @@ public class AverageDegree {
 		}
 		
 	}
-	
+
+	@Override
+	public void run() throws Exception {		
+		// Just need to calculate either out degree or in degree because
+		// every outgoing edge goes to any other vertex as an ingoing edge
+		DataSet<Tuple2<K, Long>> outDegrees = getGraph().outDegrees();
+		DataSet<Double> averageDegreeDataSet = outDegrees.reduceGroup(new AverageCalculator()); 
+		averageDegree = averageDegreeDataSet.collect().get(0);
+	}
+
+	@Override
+	public JsonNode writeOutput(ObjectMapper m) throws JsonGenerationException, JsonMappingException, IOException {
+		ObjectNode averageDegreeObject = m.createObjectNode();
+		averageDegreeObject.put("averageDegree", averageDegree);
+		return averageDegreeObject;
+	}	
 }

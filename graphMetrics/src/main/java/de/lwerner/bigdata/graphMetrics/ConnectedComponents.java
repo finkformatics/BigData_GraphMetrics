@@ -1,18 +1,21 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import org.apache.commons.cli.ParseException;
+import org.apache.flink.api.common.functions.FlatJoinFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.JoinFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.aggregation.Aggregations;
+import org.apache.flink.api.java.functions.FunctionAnnotation.ForwardedFieldsFirst;
+import org.apache.flink.api.java.functions.FunctionAnnotation.ForwardedFieldsSecond;
+import org.apache.flink.api.java.operators.DeltaIteration;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
-import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
-import org.apache.flink.graph.spargel.MessageIterator;
-import org.apache.flink.graph.spargel.MessagingFunction;
-import org.apache.flink.graph.spargel.VertexUpdateFunction;
 import org.apache.flink.util.Collector;
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
@@ -20,9 +23,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
 import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -39,12 +40,14 @@ import java.util.List;
  * @author Lukas Werner
  * @author Toni Pohl
  */
-public class ConnectedComponents {
+public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorithm<K, VV, EV> {
+	
+	private List<Tuple2<K, Long>> componentSizesList;
+	private Long biggestSize;
 
-	/**
-	 * Command line arguments
-	 */
-	private static CommandLineArguments arguments;
+	public ConnectedComponents(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
+		super(vertices, edges, context);
+	}
 	
 	/**
 	 * The main job
@@ -53,49 +56,24 @@ public class ConnectedComponents {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		arguments = ArgumentsParser.parseArguments(ConnectedComponents.class.getName(), FILENAME_CONNECTED_COMPONENTS, args);
+		try {
+			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_CONNECTED_COMPONENTS, args);
+		} catch (IllegalArgumentException | ParseException e) {
+			e.printStackTrace();
+			return;
+		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		
 		// Get the graph data
 		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
 		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
-
-		DataSet<Edge<Long, FoodBrokerEdge>> undirectedEdges = edges.flatMap(new UndirectEdge());
-		DataSet<Vertex<Long, Long>> verticesWithComponentIDs = vertices.map(new VertexCreator());
-
-		Graph<Long, Long, FoodBrokerEdge> graph = Graph.fromDataSet(verticesWithComponentIDs, undirectedEdges, env);
-
-		int maxIterations = 10;
-
-		/*
-		 * Each vertex sends its component-id (initially the vertex-id) to all neighboring vertices,
-		 * takes the minimum of the incoming component-ids and sets it as its own component-ids.
-		 */
-		Graph<Long, Long, FoodBrokerEdge> result = graph.runVertexCentricIteration(new ComponentIDUpdater(),
-				new ComponentIDMessenger(), maxIterations);
 		
-		// The vertices (with the component-id as their value) are the result
-		DataSet<Vertex<Long, Long>> resultVertices = result.getVertices();
-		
-		resultVertices.print();
-		DataSet<Tuple2<Long, Long>> componentSizes = resultVertices.flatMap(new ComponentIDCounter())
-				.groupBy(0).sum(1);
-		List<Tuple2<Long, Long>> componentSizesList = componentSizes.collect();
-		
-		// TODO: Is correct, but the first property of the tuple is arbitrary??
-		DataSet<Tuple2<Long, Long>> biggestComponent = componentSizes.aggregate(Aggregations.MAX, 1);
-		long biggestSize = biggestComponent.collect().get(0).f1;
-		
-		ObjectMapper m = new ObjectMapper();
-		ObjectNode connectedComponentsObject = m.createObjectNode();
-		connectedComponentsObject.put("biggestSize", biggestSize);
-		ArrayNode connectedComponents = connectedComponentsObject.putArray("connectedComponentSizes");
-		for (Tuple2<Long, Long> component: componentSizesList) {
-			connectedComponents.add(component.f1);
+		try {
+			new ConnectedComponents<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
+		} catch(Exception e) {
+			e.printStackTrace();
 		}
-		
-		GraphMetricsWriter.writeJson(m, connectedComponentsObject, arguments.getOutputPath());
 	}
 	
 	/**
@@ -104,12 +82,12 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class ComponentIDCounter implements FlatMapFunction<Vertex<Long, Long>, Tuple2<Long, Long>> {
+	public final class ComponentIDCounter implements FlatMapFunction<Vertex<K, K>, Tuple2<K, Long>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void flatMap(Vertex<Long, Long> vertex, Collector<Tuple2<Long, Long>> out) throws Exception {
+		public void flatMap(Vertex<K, K> vertex, Collector<Tuple2<K, Long>> out) throws Exception {
 			out.collect(new Tuple2<>(vertex.getValue(), 1L));
 		}
 		
@@ -120,12 +98,12 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class VertexCreator implements MapFunction<Vertex<Long, FoodBrokerVertex>, Vertex<Long, Long>> {
+	public final class VertexCreator implements MapFunction<Vertex<K, VV>, Vertex<K, K>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public Vertex<Long, Long> map(Vertex<Long, FoodBrokerVertex> vertex) throws Exception {
+		public Vertex<K, K> map(Vertex<K, VV> vertex) throws Exception {
 			return new Vertex<>(vertex.getId(), vertex.getId());
 		}
 
@@ -138,64 +116,92 @@ public class ConnectedComponents {
 	 * 
 	 * @author Lukas Werner
 	 */
-	public static final class UndirectEdge implements FlatMapFunction<Edge<Long, FoodBrokerEdge>, Edge<Long, FoodBrokerEdge>> {
+	public final class UndirectEdge implements FlatMapFunction<Edge<K, EV>, Edge<K, EV>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void flatMap(Edge<Long, FoodBrokerEdge> edge, Collector<Edge<Long, FoodBrokerEdge>> out) throws Exception {
+		public void flatMap(Edge<K, EV> edge, Collector<Edge<K, EV>> out) throws Exception {
 			out.collect(edge);
 			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
 		}
 
 	}
-	
+
 	/**
-	 * The messenging component of the vertex-centric approach.
-	 * 
-	 * Send your own value (component-id) to all neighboring vertices.
-	 * 
-	 * @author Lukas Werner
+	 * UDF that joins a (Vertex-ID, Component-ID) pair that represents the current component that
+	 * a vertex is associated with, with a (Source-Vertex-ID, Target-VertexID) edge. The function
+	 * produces a (Target-vertex-ID, Component-ID) pair.
 	 */
-	public static final class ComponentIDMessenger extends MessagingFunction<Long, Long, Long, FoodBrokerEdge> {
+	@ForwardedFieldsFirst("f1->f1")
+	@ForwardedFieldsSecond("f1->f0")
+	public final class NeighborWithComponentIDJoin implements JoinFunction<Vertex<K, K>, Edge<K, EV>, Vertex<K, K>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void sendMessages(Vertex<Long, Long> vertex) throws Exception {
-			for (Edge<Long, FoodBrokerEdge> edge: getEdges()) {
-				sendMessageTo(edge.getTarget(), vertex.getValue());
-			}
+		public Vertex<K, K> join(Vertex<K, K> vertexWithComponent, Edge<K, EV> edge) {
+			return new Vertex<>(edge.f1, vertexWithComponent.f1);
 		}
-		
 	}
 	
-	/**
-	 * The receiving component of the vertex-centric approach (Updater).
-	 * 
-	 * Take the minimum of the incoming component-ids and set it as your own.
-	 * 
-	 * @author Lukas Werner
-	 */
-	public static final class ComponentIDUpdater extends VertexUpdateFunction<Long, Long, Long> {
+	@ForwardedFieldsFirst("*")
+	public final class ComponentIdFilter implements FlatJoinFunction<Vertex<K, K>, Vertex<K, K>, Vertex<K, K>> {
 
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		public void updateVertex(Vertex<Long, Long> vertex, MessageIterator<Long> inMessages) throws Exception {
-			Long minValue = vertex.getValue();
-
-			for (long msg : inMessages) {
-				if (msg < minValue) {
-					minValue = msg;
-				}
-			}
-
-			if (vertex.getValue() > minValue) {
-				setNewVertexValue(minValue);
+		public void join(Vertex<K, K> candidate, Vertex<K, K> old, Collector<Vertex<K, K>> out) {
+			if (candidate.f1.longValue() < old.f1.longValue()) {
+				out.collect(candidate);
 			}
 		}
+	}
+
+	@Override
+	public void run() throws Exception {
+		DataSet<Edge<K, EV>> undirectedEdges = edges.flatMap(new UndirectEdge());
+		DataSet<Vertex<K, K>> verticesWithComponentIDs = vertices.map(new VertexCreator());
+
+		DeltaIteration<Vertex<K, K>, Vertex<K, K>> iteration = 
+				verticesWithComponentIDs.iterateDelta(verticesWithComponentIDs, arguments.getMaxIterations(), 0);
 		
+		DataSet<Vertex<K, K>> changes = iteration.getWorkset()
+				.join(undirectedEdges)
+				.where(0)
+				.equalTo(0)
+				.with(new NeighborWithComponentIDJoin())
+				.groupBy(0)
+				.aggregate(Aggregations.MIN, 1)
+				.join(iteration.getSolutionSet())
+				.where(0)
+				.equalTo(0)
+				.with(new ComponentIdFilter());
+		
+		DataSet<Tuple2<K, Long>> result = iteration
+				.closeWith(changes, changes)
+				.flatMap(new ComponentIDCounter())
+				.groupBy(0)
+				.sum(1);
+
+		componentSizesList = result.collect();
+		
+		DataSet<Tuple2<K, Long>> biggestComponent = result.aggregate(Aggregations.MAX, 1);
+		biggestSize = biggestComponent
+				.collect()
+				.get(0)
+				.f1;
+	}
+
+	@Override
+	public JsonNode writeOutput(ObjectMapper m) throws Exception {
+		ObjectNode connectedComponentsObject = m.createObjectNode();
+		connectedComponentsObject.put("biggestSize", biggestSize);
+		ArrayNode connectedComponents = connectedComponentsObject.putArray("connectedComponentSizes");
+		for (Tuple2<K, Long> component: componentSizesList) {
+			connectedComponents.add(component.f1);
+		}
+		return connectedComponentsObject;
 	}
 
 }
