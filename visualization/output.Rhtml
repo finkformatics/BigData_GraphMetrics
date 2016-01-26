@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+<head>
+  <title>Graphmetrics report</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+</head>
+<body>
+<!--begin.rcode echo=FALSE
+  library(knitr)
+  library("rjson")
+  library("ggplot2")
+  opts_chunk$set(fig.width=12, fig.height=12)
+  end.rcode-->
+
+  <!--begin.rcode echo=FALSE
+    #Grab all values
+    averageDegree <- fromJSON(file="exampleInput/average-degree.json")$averageDegree
+    globalClusterCoefficient <- fromJSON(file="exampleInput/cluster-coefficient.json")$globalClusterCoefficient
+    connectedComponents <- fromJSON(file="exampleInput/connected-components.json")
+    vertexEdgeCount <- fromJSON(file="exampleInput/vertex-edge-count.json")
+
+    #Jsons for plots
+    spreadLabels <- fromJSON(file="exampleInput/spread-labels.json")$spreadLabels
+    attributesCount <- fromJSON(file="exampleInput/spread-attributes.json")$attributesCount
+
+    end.rcode-->
+  <div class="container-fluid">
+    <div class="col-md-10 col-md-offset-1">
+
+      <div class="row">
+        <div class="col-md-7">
+          <!-- Print all single values -->
+          <h1>Values</h1>
+          <table class="table table-bordered table-striped">
+            <tbody>
+              <tr>
+                <td><strong>Average degree</strong></td>
+                <td><!--rinline averageDegree --></td>
+              </tr>
+              <tr>
+                <td><strong>Gloabel clustering coefficient</strong></td>
+                <td><!--rinline globalClusterCoefficient --></td>
+              </tr>
+              <tr>
+                <td><strong>Biggest connected component</strong></td>
+                <td><!--rinline connectedComponents$biggestSize --></td>
+              </tr>
+              <tr>
+                <td><strong>Vertex count</strong></td>
+                <td><!--rinline vertexEdgeCount$vertexCount --></td>
+              </tr>
+              <tr>
+                <td><strong>Edge count</strong></td>
+                <td><!--rinline vertexEdgeCount$edgeCount --></td>
+              </tr>
+
+
+            </tbody>
+          </table>
+        </div>
+        <div class="col-md-5">
+          <!-- Connected components -->
+          <h1>Connected components sizes</h1>
+          <!--begin.rcode echo=FALSE
+            kable(connectedComponents$connectedComponentSizes, table.attr='class="table table-bordered table-striped"')
+            end.rcode-->
+        </div>
+      </div>
+
+      <hr>
+      <!-- Spread labels as plot and table -->
+      <div class="row">
+        <h1>Spread labels</h1>
+        <div class="col-md-8">
+          <!--begin.rcode echo=FALSE
+            labels <- sapply(spreadLabels, function(x) x$label)
+            counts <- sapply(spreadLabels, function(x) x$count)
+
+            dat <- data.frame(labels = labels, counts = counts)
+            ggplot(data=dat, aes(x=labels,y=counts))+geom_bar(stat='identity')+coord_flip()
+            end.rcode-->
+        </div>
+        <div class="col-md-4">
+          <!--begin.rcode echo=FALSE
+            ordered <- dat[order(dat$labels), ]
+            ordered <- data.frame(labels = ordered$labels, counts = ordered$counts)
+            kable(ordered, table.attr='class="table table-bordered table-striped"')
+            end.rcode-->
+        </div>
+      </div>
+
+      <hr>
+      <!-- Spread attributes as plot and table -->
+      <div class="row">
+        <h1>Spread attributes</h1>
+        <div class="col-md-8">
+          <!--begin.rcode echo=FALSE
+            attributes <- sapply(attributesCount, function(x) x$attribute)
+            counts <- sapply(attributesCount, function(x) x$count)
+
+            dat <- data.frame(labels = attributes, counts = counts)
+            ggplot(data=dat, aes(x=labels,y=counts))+geom_bar(stat='identity')+coord_flip()
+            end.rcode-->
+        </div>
+        <div class="col-md-4">
+          <!--begin.rcode echo=FALSE
+            ordered <- dat[order(dat$labels), ]
+            ordered <- data.frame(labels = ordered$labels, counts = ordered$counts)
+            kable(ordered, table.attr='class="table table-bordered table-striped"')
+            end.rcode-->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
