@@ -28,6 +28,8 @@ public abstract class ArgumentsParser {
 	public static CommandLineArguments parseArguments(String className, String outputFilename, String[] arguments) throws ParseException, IllegalArgumentException {
 		Options options = new Options();
 		options.addOption("m", "maxIterations", true, "max iterations on converging algorithms");
+		options.addOption("r", "reader", true, "choose reader [<simple|food>]");
+		options.addOption("g", "graphs", true, "absolute path to graph file");
 		options.addOption("v", "vertices", true, "absolute path to vertices json file");
 		options.addOption("e", "edges", true, "absolute path to edges json file");
 		options.addOption("o", "output", true, "absolute path to output file");
@@ -42,6 +44,20 @@ public abstract class ArgumentsParser {
 				} catch (Exception e) {
 					throw new IllegalArgumentException();
 				}
+			}
+			if (cli.hasOption("reader")) {
+				String reader = cli.getOptionValue("reader");
+				switch (reader) {
+					case "simple":
+					case "food":
+						args.setReader(reader);
+						break;
+					default:
+						throw new IllegalArgumentException();
+				}
+			}
+			if (cli.hasOption("graph")) {
+				args.setGraphPath(cli.getOptionValue("graph"));
 			}
 			if (cli.hasOption("vertices")) {
 				args.setVerticesPath(cli.getOptionValue("vertices"));
@@ -84,9 +100,11 @@ public abstract class ArgumentsParser {
 		public GraphMetricsOptionComparator() {
 			orderMap = new HashMap<>();
 			orderMap.put("v", 1);
-			orderMap.put("e", 2);
-			orderMap.put("o", 3);
-			orderMap.put("m", 4);
+			orderMap.put("r", 2);
+			orderMap.put("g", 3);
+			orderMap.put("e", 4);
+			orderMap.put("o", 5);
+			orderMap.put("m", 6);
 		}
 		
 		@Override

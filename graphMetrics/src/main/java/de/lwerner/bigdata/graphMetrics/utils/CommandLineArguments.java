@@ -12,6 +12,10 @@ public class CommandLineArguments {
 	 */
 	private int maxIterations;
 	/**
+	 * GraphReader type simple|food
+	 */
+	private String reader;
+	/**
 	 * Path to the vertices file
 	 */
 	private String verticesPath;
@@ -19,6 +23,10 @@ public class CommandLineArguments {
 	 * Path to the edges file
 	 */
 	private String edgesPath;
+	/**
+	 * Path to the graph file
+	 */
+	private String graphPath;
 	/**
 	 * Path for output file
 	 */
@@ -29,23 +37,10 @@ public class CommandLineArguments {
 	 */
 	public CommandLineArguments() {
 		maxIterations = 10;
+		reader = "food";
 		verticesPath = getClass().getResource("/vertices.json").getPath();
 		edgesPath = getClass().getResource("/edges.json").getPath();
-	}
-
-	/**
-	 * Takes the given arguments and sets them
-	 * 
-	 * @param maxIterations maximum iterations
-	 * @param verticesPath path to vertices file
-	 * @param edgesPath path to edges file
-	 * @param outputPath path to output file
-	 */
-	public CommandLineArguments(int maxIterations, String verticesPath, String edgesPath, String outputPath) {
-		this.maxIterations = maxIterations;
-		this.verticesPath = verticesPath;
-		this.edgesPath = edgesPath;
-		this.outputPath = outputPath;
+		graphPath = getClass().getResource("/Email-EuAll.txt").getPath();
 	}
 
 	/**
@@ -60,6 +55,20 @@ public class CommandLineArguments {
 	 */
 	public void setMaxIterations(int maxIterations) {
 		this.maxIterations = maxIterations;
+	}
+
+	/**
+	 * @return the reader type
+     */
+	public String getReader() {
+		return reader;
+	}
+
+	/**
+	 * @param reader the reader type to set
+     */
+	public void setReader(String reader) {
+		this.reader = reader;
 	}
 
 	/**
@@ -88,6 +97,20 @@ public class CommandLineArguments {
 	 */
 	public void setEdgesPath(String edgesPath) {
 		this.edgesPath = edgesPath;
+	}
+
+	/**
+	 * @return the graph path
+     */
+	public String getGraphPath() {
+		return graphPath;
+	}
+
+	/**
+	 * @param graphPath the graph path to set
+     */
+	public void setGraphPath(String graphPath) {
+		this.graphPath = graphPath;
 	}
 
 	/**
