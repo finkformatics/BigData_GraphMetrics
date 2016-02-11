@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import de.lwerner.bigdata.graphMetrics.io.SimpleGraphReader;
 import org.apache.commons.cli.ParseException;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.common.functions.JoinFunction;
@@ -61,7 +62,7 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		SimpleGraphReader reader = new SimpleGraphReader(env, VertexEdgeCount.class.getResource("/Email-EuAll.txt").getPath());
 		new ClusterCoefficient<>(reader.getGraph(), env, true).runAndWrite();
 	}
 

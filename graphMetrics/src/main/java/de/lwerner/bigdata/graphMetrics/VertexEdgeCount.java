@@ -1,5 +1,6 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import de.lwerner.bigdata.graphMetrics.io.SimpleGraphReader;
 import org.apache.commons.cli.ParseException;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
@@ -55,7 +56,7 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		SimpleGraphReader reader = new SimpleGraphReader(env, VertexEdgeCount.class.getResource("/com-youtube.ungraph.txt").getPath());
 		new VertexEdgeCount<>(reader.getGraph(), env).runAndWrite();
 	}
 

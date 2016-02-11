@@ -1,12 +1,10 @@
 package de.lwerner.bigdata.graphMetrics.io;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
 
 public class SimpleGraphReader extends GraphReader<Long, Long, Long> {
@@ -17,16 +15,8 @@ public class SimpleGraphReader extends GraphReader<Long, Long, Long> {
 
     @Override
     public Graph<Long, Long, Long> getGraph() {
-        return null;
-    }
-
-    private DataSet<Vertex<Long, Long>> getVertices() {
-        return env.readTextFile(verticesPath).map(new MapFunction<String, Vertex<Long, Long>>() {
-            @Override
-            public Vertex<Long, Long> map(String line) throws Exception {
-                return new Vertex<Long, Long>();
-            }
-        });
+        Graph g = Graph.fromDataSet(getEdges(), env);
+        return g;
     }
 
     private DataSet<Edge<Long, Long>> getEdges() {

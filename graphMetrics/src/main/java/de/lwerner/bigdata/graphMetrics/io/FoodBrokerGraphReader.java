@@ -31,16 +31,22 @@ public class FoodBrokerGraphReader extends GraphReader<Long, FoodBrokerVertex, F
     }
 
 	private DataSet<Vertex<Long, FoodBrokerVertex>> getVertices() {
-		return env.readTextFile(verticesPath).map((MapFunction<String, Vertex<Long, FoodBrokerVertex>>) line -> {
-            FoodBrokerVertex vertex = mapper.readValue(line, FoodBrokerVertex.class);
-            return new Vertex<>(vertex.getId(), vertex);
+		return env.readTextFile(verticesPath).map(new MapFunction<String, Vertex<Long, FoodBrokerVertex>>() {
+            @Override
+            public Vertex<Long, FoodBrokerVertex> map(String line) throws Exception {
+                FoodBrokerVertex vertex = mapper.readValue(line, FoodBrokerVertex.class);
+                return new Vertex<>(vertex.getId(), vertex);
+            }
         });
 	}
 	
 	private DataSet<Edge<Long, FoodBrokerEdge>> getEdges() {
-		return env.readTextFile(edgesPath).map((MapFunction<String, Edge<Long, FoodBrokerEdge>>) line -> {
-            FoodBrokerEdge edge = mapper.readValue(line, FoodBrokerEdge.class);
-            return new Edge<>(edge.getSource(), edge.getTarget(), edge);
+		return env.readTextFile(edgesPath).map(new MapFunction<String, Edge<Long, FoodBrokerEdge>>() {
+            @Override
+            public Edge<Long, FoodBrokerEdge> map(String line) throws Exception {
+                FoodBrokerEdge edge = mapper.readValue(line, FoodBrokerEdge.class);
+                return new Edge<>(edge.getSource(), edge.getTarget(), edge);
+            }
         });
 	}
 }

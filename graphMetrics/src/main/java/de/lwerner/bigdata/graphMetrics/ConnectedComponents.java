@@ -1,5 +1,6 @@
 package de.lwerner.bigdata.graphMetrics;
 
+import de.lwerner.bigdata.graphMetrics.io.SimpleGraphReader;
 import org.apache.commons.cli.ParseException;
 import org.apache.flink.api.common.functions.FlatJoinFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -64,7 +65,7 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		SimpleGraphReader reader = new SimpleGraphReader(env, SimpleGraphReader.class.getResource("/Email-EuAll.txt").getPath());
 		new ConnectedComponents<>(reader.getGraph(), env).runAndWrite();
 	}
 	
