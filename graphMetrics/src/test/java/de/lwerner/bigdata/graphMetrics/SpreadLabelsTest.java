@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.flink.api.java.ExecutionEnvironment;import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -33,7 +34,7 @@ public class SpreadLabelsTest {
 			} catch (IOException e) {
 				Assert.fail("Exception during setup: " + e.getMessage());
 			}
-			vs.add(new Vertex<Integer, FoodBrokerVertex>(i, vertex));
+			vs.add(new Vertex<>(i, vertex));
 		}
 		
 		for (int i = 1; i < 11; i++) {
@@ -43,12 +44,12 @@ public class SpreadLabelsTest {
 			} catch (IOException e) {
 				Assert.fail("Exception during setup: " + e.getMessage());
 			}
-			es.add(new Edge<Integer, FoodBrokerEdge>(i, (i % 10) + 1, edge));
+			es.add(new Edge<>(i, (i % 10) + 1, edge));
 		}
 		
-		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		algo = new SpreadLabels<Integer, FoodBrokerVertex, FoodBrokerEdge>(env.fromCollection(vs), env.fromCollection(es), env);
 		try {
+			ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+			algo = new SpreadLabels<>(Graph.fromCollection(vs, es, env), env);
 			algo.run();
 		} catch (Exception e) {
 			Assert.fail("Exception during run: " + e.getMessage());

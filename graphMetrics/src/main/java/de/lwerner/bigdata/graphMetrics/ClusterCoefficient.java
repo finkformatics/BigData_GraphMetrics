@@ -14,17 +14,14 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
-import org.apache.flink.graph.Vertex;
 import org.apache.flink.graph.library.TriangleEnumerator.Triad;
 import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
-import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
-import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.io.FoodBrokerGraphReader;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -40,14 +37,12 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 
 	double globalClusterCoefficient;
 	
-	public ClusterCoefficient(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges,
-			ExecutionEnvironment context) {
-		super(vertices, edges, context);
+	public ClusterCoefficient(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		super(graph, context);
 	}
 
-	public ClusterCoefficient(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges,
-			ExecutionEnvironment context, boolean undirected) {
-		super(vertices, edges, context, undirected);
+	public ClusterCoefficient(Graph<K, VV, EV> graph, ExecutionEnvironment context, boolean undirected) throws Exception {
+		super(graph, context, undirected);
 	}
 
 	/**
@@ -65,13 +60,9 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 		}
 
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env,
-				arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> edges =
-				FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
 
-		new ClusterCoefficient<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env, true).runAndWrite();
+		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		new ClusterCoefficient<>(reader.getGraph(), env, true).runAndWrite();
 	}
 
 	public double getGlobalClusterCoefficient() {
@@ -84,9 +75,6 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	 * @author Toni Pohl
 	 */
 	public final class EdgesIdMapFunction implements MapFunction<Edge<K, EV>, Edge<K, EV>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public Edge<K, EV> map(Edge<K, EV> value) throws Exception {
 			K srcV = value.getSource();
@@ -99,7 +87,6 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 
 			return value;
 		}
-
 	}
 
 	/**
@@ -108,18 +95,14 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	 * @author Toni Pohl
 	 */
 	public final class TriplePerVertixMapFunction implements MapFunction<Tuple2<K, Long>, Tuple2<K, Long>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public Tuple2<K, Long> map(Tuple2<K, Long> value) throws Exception {
 			long sum = 0;
 			for (int i = 1; i < value.f1; i++) {
 				sum += i;
 			}
-			return new Tuple2<K, Long>(value.f0, sum);
+			return new Tuple2<>(value.f0, sum);
 		}
-
 	}
 
 	/**
@@ -129,8 +112,6 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	 * @author Toni Pohl
 	 */
 	public final class TriadBuilder implements GroupReduceFunction<Edge<K, EV>, Triad<K>> {
-
-		private static final long serialVersionUID = 1L;
 		private final List<K> vertices = new ArrayList<K>();
 		private final Triad<K> outTriad = new Triad<K>();
 
@@ -168,7 +149,7 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	public void run() throws Exception {
 		Graph<K, VV, EV> g = getGraph();
 
-		DataSet<Edge<K, EV>> edgesById = edges
+		DataSet<Edge<K, EV>> edgesById = getEdges()
 				.map(new EdgesIdMapFunction());
 
 		DataSet<Triad<K>> triads = edgesById.groupBy(0).sortGroup(1, Order.ASCENDING).reduceGroup(new TriadBuilder())
@@ -192,7 +173,7 @@ public class ClusterCoefficient<K extends Number, VV, EV> extends GraphAlgorithm
 	}
 
 	@Override
-	public JsonNode writeOutput(ObjectMapper m) throws Exception {
+	public JsonNode writeOutput(ObjectMapper m) {
 		ObjectNode clusterCoefficientObject = m.createObjectNode();
 		clusterCoefficientObject.put("globalClusterCoefficient", globalClusterCoefficient);
 

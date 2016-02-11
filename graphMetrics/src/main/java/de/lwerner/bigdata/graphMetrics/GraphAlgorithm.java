@@ -1,6 +1,7 @@
 package de.lwerner.bigdata.graphMetrics;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
@@ -11,7 +12,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
+import de.lwerner.bigdata.graphMetrics.io.GraphMetricsWriter;
 
 /**
  * Abstract class which should be implemented by all graph algorithms
@@ -29,15 +30,7 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	 * Command Line Arguments
 	 */
 	protected static CommandLineArguments arguments;
-	
-	/**
-	 * Vertices
-	 */
-	protected DataSet<Vertex<K, VV>> vertices;
-	/**
-	 * Edges
-	 */
-	protected DataSet<Edge<K, EV>> edges;
+
 	/**
 	 * Graph
 	 */
@@ -48,34 +41,28 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	protected ExecutionEnvironment context;
 
 	/**
-	 * Creates a graph from vertices and edges
+	 *
 	 * 
-	 * @param vertices a Dataset of vertices
-	 * @param edges a Dataset of edges
+	 * @param graph the graph
 	 * @param context the flink execution environment
 	 */
-	public GraphAlgorithm(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
-		this.vertices = vertices;
-		this.edges = edges;
-		this.graph = Graph.fromDataSet(vertices, edges, context);
-		this.context = context;
+	public GraphAlgorithm(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		this(graph, context, false);
 	}
 	
 	/**
-	 * Creates a graph from vertices and edges
+	 *
 	 * 
-	 * @param vertices a Dataset of vertices
-	 * @param edges a Dataset of edges
+	 * @param graph the graph
 	 * @param context the flink execution environment
 	 * @param undirected make the edges undirected
 	 */
-	public GraphAlgorithm(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context, boolean undirected) {
+	public GraphAlgorithm(Graph<K, VV, EV> graph, ExecutionEnvironment context, boolean undirected) throws Exception {
 		if (undirected) {
-			edges = edges.flatMap(new UndirectedEdge());
-		} 
-		this.vertices = vertices;
-		this.edges = edges;
-		this.graph = Graph.fromDataSet(vertices, edges, context);
+			this.graph = graph.getUndirected();
+		} else {
+			this.graph = graph;
+		}
 		this.context = context;
 	}
 	
@@ -85,7 +72,7 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	 * @return the DataSet with the vertices
 	 */
 	public DataSet<Vertex<K, VV>> getVertices() {
-		return vertices;
+		return graph.getVertices();
 	}
 	
 	/**
@@ -94,7 +81,7 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	 * @return the DataSet with the edges
 	 */
 	public DataSet<Edge<K, EV>> getEdges() {
-		return edges;
+		return graph.getEdges();
 	}
 	
 	/**
@@ -116,24 +103,6 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	}
 	
 	/**
-	 * FlatMapFunction which created undirected edges from edges
-	 * 
-	 * @author Toni Pohl
-	 */
-	private final class UndirectedEdge
-			implements FlatMapFunction<Edge<K, EV>, Edge<K, EV>> {
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void flatMap(Edge<K, EV> edge, Collector<Edge<K, EV>> out)
-				throws Exception {
-			out.collect(edge);
-			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
-		}
-	}
-	
-	/**
 	 * Run the algorithm and write output
 	 * @throws Exception during run or writeOutput
 	 */
@@ -152,6 +121,6 @@ public abstract class GraphAlgorithm<K, VV, EV> {
 	/**
 	 * Method to writeOutput
 	 */
-	abstract public JsonNode writeOutput(ObjectMapper m) throws Exception;
+	abstract public JsonNode writeOutput(ObjectMapper m);
 	
 }

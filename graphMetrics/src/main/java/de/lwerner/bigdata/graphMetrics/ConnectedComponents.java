@@ -13,6 +13,7 @@ import org.apache.flink.api.java.functions.FunctionAnnotation.ForwardedFieldsSec
 import org.apache.flink.api.java.operators.DeltaIteration;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonNode;
@@ -20,10 +21,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
 
-import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
-import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.io.FoodBrokerGraphReader;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -45,8 +44,8 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	private List<Tuple2<K, Long>> componentSizesList;
 	private Long biggestSize;
 
-	public ConnectedComponents(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
-		super(vertices, edges, context);
+	public ConnectedComponents(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		super(graph, context, true);
 	}
 	
 	/**
@@ -64,16 +63,9 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		
-		// Get the graph data
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
-		
-		try {
-			new ConnectedComponents<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+
+		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		new ConnectedComponents<>(reader.getGraph(), env).runAndWrite();
 	}
 	
 	/**
@@ -83,14 +75,10 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	 * @author Lukas Werner
 	 */
 	public final class ComponentIDCounter implements FlatMapFunction<Vertex<K, K>, Tuple2<K, Long>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public void flatMap(Vertex<K, K> vertex, Collector<Tuple2<K, Long>> out) throws Exception {
 			out.collect(new Tuple2<>(vertex.getValue(), 1L));
 		}
-		
 	}
 
 	/**
@@ -99,33 +87,10 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	 * @author Lukas Werner
 	 */
 	public final class VertexCreator implements MapFunction<Vertex<K, VV>, Vertex<K, K>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public Vertex<K, K> map(Vertex<K, VV> vertex) throws Exception {
 			return new Vertex<>(vertex.getId(), vertex.getId());
 		}
-
-	}
-
-	/**
-	 * FlatMapFunction to create the edges from two vertex-ids. Creates each inverted edge too.
-	 * 
-	 * This FlatMapFunction has two roles: Create edges from given vertex-ids and undirect the graph
-	 * 
-	 * @author Lukas Werner
-	 */
-	public final class UndirectEdge implements FlatMapFunction<Edge<K, EV>, Edge<K, EV>> {
-
-		private static final long serialVersionUID = 1L;
-
-		@Override
-		public void flatMap(Edge<K, EV> edge, Collector<Edge<K, EV>> out) throws Exception {
-			out.collect(edge);
-			out.collect(new Edge<>(edge.getTarget(), edge.getSource(), edge.getValue()));
-		}
-
 	}
 
 	/**
@@ -136,9 +101,6 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	@ForwardedFieldsFirst("f1->f1")
 	@ForwardedFieldsSecond("f1->f0")
 	public final class NeighborWithComponentIDJoin implements JoinFunction<Vertex<K, K>, Edge<K, EV>, Vertex<K, K>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public Vertex<K, K> join(Vertex<K, K> vertexWithComponent, Edge<K, EV> edge) {
 			return new Vertex<>(edge.f1, vertexWithComponent.f1);
@@ -147,9 +109,6 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	
 	@ForwardedFieldsFirst("*")
 	public final class ComponentIdFilter implements FlatJoinFunction<Vertex<K, K>, Vertex<K, K>, Vertex<K, K>> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public void join(Vertex<K, K> candidate, Vertex<K, K> old, Collector<Vertex<K, K>> out) {
 			if (candidate.f1.longValue() < old.f1.longValue()) {
@@ -160,14 +119,13 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 
 	@Override
 	public void run() throws Exception {
-		DataSet<Edge<K, EV>> undirectedEdges = edges.flatMap(new UndirectEdge());
-		DataSet<Vertex<K, K>> verticesWithComponentIDs = vertices.map(new VertexCreator());
+		DataSet<Vertex<K, K>> verticesWithComponentIDs = getVertices().map(new VertexCreator());
 
 		DeltaIteration<Vertex<K, K>, Vertex<K, K>> iteration = 
 				verticesWithComponentIDs.iterateDelta(verticesWithComponentIDs, arguments.getMaxIterations(), 0);
 		
 		DataSet<Vertex<K, K>> changes = iteration.getWorkset()
-				.join(undirectedEdges)
+				.join(getEdges())
 				.where(0)
 				.equalTo(0)
 				.with(new NeighborWithComponentIDJoin())
@@ -194,7 +152,7 @@ public class ConnectedComponents<K extends Number, VV, EV> extends GraphAlgorith
 	}
 
 	@Override
-	public JsonNode writeOutput(ObjectMapper m) throws Exception {
+	public JsonNode writeOutput(ObjectMapper m) {
 		ObjectNode connectedComponentsObject = m.createObjectNode();
 		connectedComponentsObject.put("biggestSize", biggestSize);
 		ArrayNode connectedComponents = connectedComponentsObject.putArray("connectedComponentSizes");

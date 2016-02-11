@@ -4,13 +4,7 @@ import java.io.File;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 
 /**
  * Simple class for parsing the command line parameters into the desired format.
@@ -39,7 +33,7 @@ public abstract class ArgumentsParser {
 		options.addOption("o", "output", true, "absolute path to output file");
 		
 		CommandLineArguments args = new CommandLineArguments();
-		CommandLineParser parser = new DefaultParser();
+		CommandLineParser parser = new PosixParser();
 		try {
 			CommandLine cli = parser.parse(options, arguments);
 			if (cli.hasOption("maxIterations")) {

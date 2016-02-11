@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,11 +32,10 @@ public class ClusterCoefficientTest {
 		es.add(new Edge<Integer, Integer>(2, 4, 0));
 		es.add(new Edge<Integer, Integer>(4, 5, 0));
 		
-		algo = new ClusterCoefficient<Integer, Integer, Integer>(env.fromCollection(vs), 
-				env.fromCollection(es), 
-				env, 
-				true);
 		try {
+			algo = new ClusterCoefficient<>(Graph.fromCollection(vs, es, env),
+					env,
+					true);
 			algo.run();
 		} catch (Exception e) {
 			Assert.fail("Exception during setup: " + e.getMessage());

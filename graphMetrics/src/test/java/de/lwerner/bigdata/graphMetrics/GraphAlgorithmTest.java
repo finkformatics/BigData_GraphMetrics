@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -33,22 +34,23 @@ public class GraphAlgorithmTest {
 		vs.add(new Vertex<Integer, Integer>(2, 2));
 		
 		es.add(new Edge<Integer, Integer>(1, 2, 1));
-		
-		vertices = env.fromCollection(vs);
-		edges = env.fromCollection(es);
-		
-		algo = new GraphAlgorithm<Integer, Integer, Integer>(vertices, edges, env) {
-			@Override
-			public void run() {
-				// do nothing
-			}
 
-			@Override
-			public JsonNode writeOutput(ObjectMapper m) {
-				// do nothing
-				return null;
-			}
-		};
+		try {
+			algo = new GraphAlgorithm<Integer, Integer, Integer>(Graph.fromCollection(vs, es, env), env) {
+				@Override
+				public void run() {
+					// do nothing
+				}
+
+				@Override
+				public JsonNode writeOutput(ObjectMapper m) {
+					// do nothing
+					return null;
+				}
+			};
+		} catch (Exception e) {
+			Assert.fail("Exception during run: " + e.getMessage());
+		}
 	}
 	
 	@Test

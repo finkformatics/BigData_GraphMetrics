@@ -13,7 +13,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.io.FoodBrokerGraphReader;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -27,8 +27,8 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 	private long verticesCount = 0;
 	private long edgesCount = 0;
 
-	public VertexEdgeCount(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
-		super(vertices, edges, context);
+	public VertexEdgeCount(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		super(graph, context);
 	}
 	
 	public long getVerticesCount() {
@@ -54,12 +54,9 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
-		
-		new VertexEdgeCount<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
-		
+
+		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		new VertexEdgeCount<>(reader.getGraph(), env).runAndWrite();
 	}
 
 	@Override
@@ -71,7 +68,7 @@ public class VertexEdgeCount<K extends Number, VV, EV> extends GraphAlgorithm<K,
 	}
 
 	@Override
-	public JsonNode writeOutput(ObjectMapper m) throws Exception {
+	public JsonNode writeOutput(ObjectMapper m) {
 		ObjectNode countNode = m.createObjectNode();
 		countNode.put("vertexCount", verticesCount);
 		countNode.put("edgeCount", edgesCount);

@@ -6,6 +6,7 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonGenerationException;
@@ -17,7 +18,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
+import de.lwerner.bigdata.graphMetrics.io.FoodBrokerGraphReader;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
@@ -33,8 +34,8 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	
 	private double averageDegree = 0;
 
-	public AverageDegree(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
-		super(vertices, edges, context);
+	public AverageDegree(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		super(graph, context);
 	}
 	
 	/**
@@ -52,7 +53,7 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		try {
 			arguments = ArgumentsParser.parseArguments(AverageDegree.class.getName(), FILENAME_AVERAGE_DEGREE, args);
 		} catch (IllegalArgumentException | ParseException e) {
@@ -61,15 +62,9 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 		}
 		
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-		
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env, arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
-		
-		try {
-			new AverageDegree<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+
+		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		new AverageDegree<>(reader.getGraph(), env).runAndWrite();
 	}
 
 	/**
@@ -78,9 +73,6 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	 * @author Lukas Werner
 	 */
 	public final class AverageCalculator implements GroupReduceFunction<Tuple2<K, Long>, Double> {
-
-		private static final long serialVersionUID = 1L;
-
 		@Override
 		public void reduce(Iterable<Tuple2<K, Long>> values, Collector<Double> out) throws Exception {
 			long sum = 0;
@@ -91,7 +83,6 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 			}
 			out.collect((double)sum / count);
 		}
-		
 	}
 
 	@Override
@@ -104,7 +95,7 @@ public class AverageDegree<K extends Number, VV, EV> extends GraphAlgorithm<K, V
 	}
 
 	@Override
-	public JsonNode writeOutput(ObjectMapper m) throws JsonGenerationException, JsonMappingException, IOException {
+	public JsonNode writeOutput(ObjectMapper m) {
 		ObjectNode averageDegreeObject = m.createObjectNode();
 		averageDegreeObject.put("averageDegree", averageDegree);
 		return averageDegreeObject;

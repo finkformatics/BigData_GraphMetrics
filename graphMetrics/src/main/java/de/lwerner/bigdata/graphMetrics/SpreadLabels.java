@@ -6,6 +6,7 @@ import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.graph.Edge;
+import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.util.Collector;
 import org.codehaus.jackson.JsonNode;
@@ -16,12 +17,11 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerEdge;
 import de.lwerner.bigdata.graphMetrics.models.FoodBrokerVertex;
 import de.lwerner.bigdata.graphMetrics.utils.ArgumentsParser;
-import de.lwerner.bigdata.graphMetrics.utils.CommandLineArguments;
-import de.lwerner.bigdata.graphMetrics.utils.FoodBrokerReader;
-import de.lwerner.bigdata.graphMetrics.utils.GraphMetricsWriter;
+import de.lwerner.bigdata.graphMetrics.io.FoodBrokerGraphReader;
 
 import static de.lwerner.bigdata.graphMetrics.utils.GraphMetricsConstants.*;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,21 +34,18 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 	DataSet<Tuple2<String, Integer>> verticesLabelCount;
 	DataSet<Tuple2<String, Integer>> spreadLabels;
 	DataSet<Tuple2<String, Integer>> edgesLabelCount;
-	
+	List<Tuple2<String, Integer>> spreadLabelsList = new LinkedList<>();
+
 	public DataSet<Tuple2<String, Integer>> getVerticesLabelCount() {
 		return verticesLabelCount;
-	}
-
-	public DataSet<Tuple2<String, Integer>> getSpreadLabels() {
-		return spreadLabels;
 	}
 
 	public DataSet<Tuple2<String, Integer>> getEdgesLabelCount() {
 		return edgesLabelCount;
 	}
 	
-	public SpreadLabels(DataSet<Vertex<K, VV>> vertices, DataSet<Edge<K, EV>> edges, ExecutionEnvironment context) {
-		super(vertices, edges, context);
+	public SpreadLabels(Graph<K, VV, EV> graph, ExecutionEnvironment context) throws Exception {
+		super(graph, context);
 	}
 
 	/**
@@ -67,16 +64,13 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		DataSet<Vertex<Long, FoodBrokerVertex>> vertices = FoodBrokerReader.getVertices(env,
-				arguments.getVerticesPath());
-		DataSet<Edge<Long, FoodBrokerEdge>> edges = FoodBrokerReader.getEdges(env, arguments.getEdgesPath());
-
-		new SpreadLabels<Long, FoodBrokerVertex, FoodBrokerEdge>(vertices, edges, env).runAndWrite();
+		FoodBrokerGraphReader reader = new FoodBrokerGraphReader(env, arguments.getVerticesPath(), arguments.getEdgesPath());
+		new SpreadLabels<>(reader.getGraph(), env).runAndWrite();
 	}
 
 	@Override
 	public void run() throws Exception {
-		verticesLabelCount = vertices
+		verticesLabelCount = getVertices()
 				.flatMap(new FlatMapFunction<Vertex<K, VV>, Tuple2<String, Integer>>() {
 
 					private static final long serialVersionUID = 1L;
@@ -84,11 +78,11 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 					@Override
 					public void flatMap(Vertex<K, VV> in, Collector<Tuple2<String, Integer>> out)
 							throws Exception {
-						out.collect(new Tuple2<String, Integer>(in.f1.getMeta().get("label").toString(), 1));
+						out.collect(new Tuple2<>(in.f1.getMeta().get("label").toString(), 1));
 					}
 				}).groupBy(0).sum(1);
 
-		edgesLabelCount = edges
+		edgesLabelCount = getEdges()
 				.flatMap(new FlatMapFunction<Edge<K, EV>, Tuple2<String, Integer>>() {
 
 					private static final long serialVersionUID = 1L;
@@ -96,18 +90,16 @@ public class SpreadLabels<K, VV extends FoodBrokerVertex, EV extends FoodBrokerE
 					@Override
 					public void flatMap(Edge<K, EV> in, Collector<Tuple2<String, Integer>> out)
 							throws Exception {
-						out.collect(new Tuple2<String, Integer>(in.f2.getMeta().get("label").toString(), 1));
+						out.collect(new Tuple2<>(in.f2.getMeta().get("label").toString(), 1));
 					}
 				}).groupBy(0).sum(1);
 
 		spreadLabels = verticesLabelCount.union(edgesLabelCount).groupBy(0).sum(1);
-		
-
+		spreadLabelsList = spreadLabels.collect();
 	}
 
 	@Override
-	public JsonNode writeOutput(ObjectMapper m) throws Exception {
-		List<Tuple2<String, Integer>> spreadLabelsList = spreadLabels.collect();
+	public JsonNode writeOutput(ObjectMapper m) {
 		ObjectNode spreadLabelsObject = m.createObjectNode();
 		ArrayNode spreadLabelsArray = spreadLabelsObject.putArray("spreadLabels");
 		for (Tuple2<String, Integer> labelCount : spreadLabelsList) {
