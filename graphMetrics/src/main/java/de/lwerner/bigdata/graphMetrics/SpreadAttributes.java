@@ -106,7 +106,16 @@ public class SpreadAttributes<K, VV extends FoodBrokerVertex, EV extends FoodBro
 	public final class VertexKeySchema implements FlatMapFunction<Vertex<K, VV>, Tuple2<String, Integer>> {
 		public void flatMap(Vertex<K, VV> in, Collector<Tuple2<String, Integer>> out)
 				throws Exception {
-			flatMapSchema(in.getValue().getData().getFieldNames(), out);
+			Iterator<String> atts = in.getValue().getData().getFieldNames();
+			StringBuilder sb = new StringBuilder();
+			while (atts.hasNext()) {
+				sb.append(atts.next()).append(" ");
+			}
+			if (sb.length() > 0) {
+				sb.deleteCharAt(sb.length() - 1);
+			}
+
+			out.collect(new Tuple2<>(sb.toString(), 1));
 		}
 	}
 	
@@ -121,20 +130,17 @@ public class SpreadAttributes<K, VV extends FoodBrokerVertex, EV extends FoodBro
 
 		public void flatMap(Edge<K, EV> in, Collector<Tuple2<String, Integer>> out)
 				throws Exception {
-			flatMapSchema(in.getValue().getData().getFieldNames(), out);
-		}
-	}
+			Iterator<String> atts = in.getValue().getData().getFieldNames();
+			StringBuilder sb = new StringBuilder();
+			while (atts.hasNext()) {
+				sb.append(atts.next()).append(" ");
+			}
+			if (sb.length() > 0) {
+				sb.deleteCharAt(sb.length() - 1);
+			}
 
-	private void flatMapSchema(Iterator<String> atts,Collector<Tuple2<String, Integer>> out) {
-		StringBuilder sb = new StringBuilder();
-		while (atts.hasNext()) {
-			sb.append(atts.next()).append(" ");
+			out.collect(new Tuple2<>(sb.toString(), 1));
 		}
-		if (sb.length() > 0) {
-			sb.deleteCharAt(sb.length() - 1);
-		}
-
-		out.collect(new Tuple2<>(sb.toString(), 1));
 	}
 
 	@Override

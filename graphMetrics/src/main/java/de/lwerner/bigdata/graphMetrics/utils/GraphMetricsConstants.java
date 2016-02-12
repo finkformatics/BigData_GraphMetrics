@@ -1,5 +1,8 @@
 package de.lwerner.bigdata.graphMetrics.utils;
 
+/**
+ * Constants for this project
+ */
 public interface GraphMetricsConstants {
 
 	String FILENAME_AVERAGE_DEGREE = "average-degree.json";
