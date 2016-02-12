@@ -1,0 +1,3 @@
+- Cluster Coefficient Berechnung validieren mit realem Datensatz (SNAP, google)
+- MasterData filtern (dann 100000), filtern auf Kanten
+- TypeInformation angeben in .returns(), ResultTypeQueryable
