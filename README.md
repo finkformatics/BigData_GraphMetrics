@@ -17,7 +17,7 @@ install.packages('rjson')
 ### Execute
 Now run `r -f visualization/output.R` from the root folder and open `visualization/output.html` or `visualization/output_d3.html` in your favoured browser. [Bootstrap](http://getbootstrap.com) provides the necessary styles thus an internet connection is needed.
 `visualization/output_d3.html` makes use of [d3](https://d3js.org) and [nvd3](http://nvd3.org) to provide a better overview.
-An example output can be found [here](https://rawgit.com/tpohl90/c99f91bd13f2ee01afd2/raw/5d7901374fa9f46233cbc28f6e05fbef4c62173a/output_d3.html).
+An example output can be found [here](https://cdn.rawgit.com/tpohl90/c99f91bd13f2ee01afd2/raw/c859b75ecdd71d7948961ced77a472b71c9c36c1/output_d3.html).
 
 ### Optional
 Besided the HTML file `visualization/rscripts` provides different R scripts to generate an adequate output.
