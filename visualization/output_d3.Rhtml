@@ -1,0 +1,190 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Graphmetrics report</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.1/nv.d3.min.css">
+  </head>
+  <body>
+    <!--begin.rcode echo=FALSE
+    library(knitr)
+    library("rjson")
+    library("ggplot2")
+    opts_chunk$set(fig.width=12, fig.height=12)
+    end.rcode-->
+
+    <!--begin.rcode echo=FALSE
+      #Grab all values
+      averageDegree <- fromJSON(file="exampleInput/average-degree.json")$averageDegree
+      globalClusterCoefficient <- fromJSON(file="exampleInput/cluster-coefficient.json")$globalClusterCoefficient
+      connectedComponents <- fromJSON(file="exampleInput/connected-components.json")
+      vertexEdgeCount <- fromJSON(file="exampleInput/vertex-edge-count.json")
+
+      #Jsons for plots
+      spreadLabels <- fromJSON(file="exampleInput/spread-labels.json")$spreadLabels
+      attributesCount <- fromJSON(file="exampleInput/spread-attributes.json")$attributesCount
+
+      end.rcode-->
+
+    <div class="container-fluid">
+      <div class="col-md-10 col-md-offset-1">
+        <div class="row">
+          <div class="col-md-7">
+            <!-- Print all single values -->
+            <h1>Values</h1>
+            <table class="table table-bordered table-striped">
+              <tbody>
+                <tr>
+                  <td><strong>Average degree</strong></td>
+                  <td><!--rinline averageDegree --></td>
+                </tr>
+                <tr>
+                  <td><strong>Gloabel clustering coefficient</strong></td>
+                  <td><!--rinline globalClusterCoefficient --></td>
+                </tr>
+                <tr>
+                  <td><strong>Biggest connected component</strong></td>
+                  <td><!--rinline connectedComponents$biggestSize --></td>
+                </tr>
+                <tr>
+                  <td><strong>Vertex count</strong></td>
+                  <td><!--rinline vertexEdgeCount$vertexCount --></td>
+                </tr>
+                <tr>
+                  <td><strong>Edge count</strong></td>
+                  <td><!--rinline vertexEdgeCount$edgeCount --></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-5">
+            <!-- Connected components -->
+            <h1>Connected components sizes</h1>
+            <!--begin.rcode echo=FALSE
+              kable(connectedComponents$connectedComponentSizes, table.attr='class="table table-bordered table-striped"')
+              end.rcode-->
+          </div>
+        </div>
+
+        <hr>
+        <div class="row">
+          <h1>Spread labels
+            <button class="btn btn-default" id="sort-labels">Sort labels</button>
+            <button class="btn btn-default" id="sort-labels-count">Sort count</button>
+          </h1>
+          <div id="labels-chart">
+            <svg></svg>
+          </div>
+        </div>
+
+        <hr>
+        <div class="row">
+          <h1>Attributes count
+            <button class="btn btn-default" id="sort-attributes">Sort attributes</button>
+            <button class="btn btn-default" id="sort-attributes-count">Sort count</button>
+          </h1>
+          <div id="attributes-chart">
+            <svg></svg>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+
+
+    <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.15/d3.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nvd3/1.8.1/nv.d3.min.js"></script>
+
+    <script type="text/javascript">
+      var metrics = {
+        averageDegree: <!--rinline I(toJSON(averageDegree)) -->,
+        globalClusterCoefficient: <!--rinline I(toJSON(globalClusterCoefficient)) -->,
+        connectedComponents: <!--rinline I(toJSON(connectedComponents)) -->,
+        vertexEdgeCount: <!--rinline I(toJSON(vertexEdgeCount)) -->,
+        spreadLabels: <!--rinline I(toJSON(spreadLabels)) -->,
+        attributesCount: <!--rinline I(toJSON(attributesCount)) -->
+      }
+
+      // x and y are flipped by nvd3
+      createChart({
+        chart: '#attributes-chart',
+        data: [{ values: metrics.attributesCount }],
+        x: 'attribute',
+        y: 'count',
+        sorts: [
+          {
+            obj: $('#sort-attributes-count'),
+            sortFn: chartSort('count')
+          },
+          {
+            obj: $('#sort-attributes'),
+            sortFn: chartSort('attribute')
+          }
+        ]
+      });
+
+      // x and y are flipped by nvd3
+      createChart({
+        chart: '#labels-chart',
+        data: [{ values: metrics.spreadLabels }],
+        x: 'label',
+        y: 'count',
+        sorts: [
+          {
+            obj: $('#sort-labels-count'),
+            sortFn: chartSort('count')
+          },
+          {
+            obj: $('#sort-labels'),
+            sortFn: chartSort('label')
+          }
+        ]
+      });
+
+      // Creates one chart
+      function createChart(options) {
+        $(options.chart).height(options.data[0].values.length * 30 + 'px');
+        nv.addGraph(function () {
+          var chart = nv.models.multiBarHorizontalChart().x(function (d) {
+            return d[options.x]
+          }).y(function (d) {
+            return d[options.y]
+          }).margin({top: 30, right: 20, bottom: 50, left: 175}).showValues(true).showControls(false).showLegend(false);
+
+          chart.yAxis.tickFormat(d3.format(',.2f'));
+
+          d3.select(options.chart + ' svg').datum(options.data).transition().duration(500).call(chart);
+
+          nv.utils.windowResize(chart.update);
+
+          options.sorts.forEach(function(sort) {
+            sort.obj.click(function() {
+              options.data[0].values = options.data[0].values.sort(sort.sortFn());
+              d3.select(options.chart + ' svg').datum(options.data).transition().duration(500).call(chart);
+            });
+          });
+
+          return chart;
+        });
+      }
+
+      // Fn to sort the chart by an object key
+      function chartSort(key) {
+        var desc = true;
+
+        return function() {
+          desc = !desc;
+          return function(a, b) {
+            a = a[key]; b = b[key];
+            var ret = (a < b) ? -1 : ( (a > b) ? 1 : 0 );
+            ret = desc ? -1 * ret : ret;
+            return ret;
+          };
+        };
+      }
+    </script>
+  </body>
+</html>
